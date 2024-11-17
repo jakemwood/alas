@@ -1,20 +1,21 @@
-use crate::network_manager::{AccessPointProxy, ActiveConnectionProxy, DeviceProxy, NetworkManagerProxy, StateChangedArgs, WiFiDeviceProxy};
+use crate::get_all_devices;
+use crate::network_manager::{
+    AccessPointProxy, ActiveConnectionProxy, DeviceProxy, NetworkManagerProxy, StateChangedArgs,
+    WiFiDeviceProxy,
+};
+use serde::Serialize;
 use std::collections::HashMap;
-use tokio::sync::{watch};
+use tokio::sync::watch;
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
+use zbus::proxy::ProxyImpl;
 use zbus::zvariant::{ObjectPath, OwnedObjectPath, Value};
 use zbus::Connection;
-use serde::Serialize;
-use zbus::proxy::ProxyImpl;
-use crate::{get_all_devices};
 
 /// Find the device path that is responsible for Wi-Fi.
 ///
 /// Returns the path if one is found.
-async fn find_wifi_device_path(
-    conn: &Connection,
-) -> Option<OwnedObjectPath> {
+async fn find_wifi_device_path(conn: &Connection) -> Option<OwnedObjectPath> {
     const WIFI: u32 = 2;
 
     let all_devices = get_all_devices(&conn).await;
@@ -35,8 +36,12 @@ async fn find_wifi_device_path(
 
 /// Get a Z-bus proxy for working with the Wi-Fi device
 async fn find_wifi_device(conn: &Connection) -> WiFiDeviceProxy {
-    let path = find_wifi_device_path(&conn).await.expect("Could not find Wi-Fi device");
-    WiFiDeviceProxy::new(conn, path).await.expect("No WiFi device proxy")
+    let path = find_wifi_device_path(&conn)
+        .await
+        .expect("Could not find Wi-Fi device");
+    WiFiDeviceProxy::new(conn, path)
+        .await
+        .expect("No WiFi device proxy")
 }
 
 /// Given a list of paths to Access Points, load the data into a structure that we like
@@ -52,7 +57,11 @@ async fn load_access_points(
         let ssid =
             String::from_utf8(app.ssid().await.expect("No ssid")).expect("Could not convert SSID");
 
-        let security = if app.rsn_flags().await.expect("No security") & 0x100 != 0 { "wpa" } else { "none" };
+        let security = if app.rsn_flags().await.expect("No security") & 0x100 != 0 {
+            "wpa"
+        } else {
+            "none"
+        };
 
         results.push(WiFiNetwork {
             ssid,
@@ -72,7 +81,9 @@ async fn connect_to_wifi(
     access_point_path: String,
     password: Option<String>,
 ) {
-    let access_point = AccessPointProxy::new(&conn, access_point_path).await.expect("No access path by this name");
+    let access_point = AccessPointProxy::new(&conn, access_point_path)
+        .await
+        .expect("No access path by this name");
     let ssid_bytes = access_point.ssid().await.expect("No SSID");
     let ssid = String::from_utf8(ssid_bytes.clone()).unwrap();
 
@@ -137,8 +148,8 @@ async fn disconnect_wifi(conn: &Connection) {
 }
 
 /******************************************************************
-  PUBLIC API
- ******************************************************************/
+ PUBLIC API
+******************************************************************/
 
 // This structure represents the basics of a Wi-Fi network
 #[derive(Debug, Serialize)]
@@ -147,21 +158,31 @@ pub struct WiFiNetwork {
     pub strength: u8,
     pub ap_path: OwnedObjectPath,
     pub frequency: u32,
-    pub security: String
+    pub security: String,
 }
 
 // Get a list of Wi-Fi networks
 pub async fn get_wifi_networks() -> Vec<WiFiNetwork> {
-    let conn = Connection::system().await.expect("Could not connect to D-bus");
+    let conn = Connection::system()
+        .await
+        .expect("Could not connect to D-bus");
     let wifi_device = find_wifi_device(&conn).await;
-    wifi_device.request_scan(HashMap::new()).await.expect("did not scan");
-    let raw_access_points = wifi_device.get_all_access_points().await.expect("Needs access points");
+    wifi_device
+        .request_scan(HashMap::new())
+        .await
+        .expect("did not scan");
+    let raw_access_points = wifi_device
+        .get_all_access_points()
+        .await
+        .expect("Needs access points");
     load_access_points(&conn, raw_access_points.clone()).await
 }
 
 // Join a Wi-Fi network, given an Access Point Path and the password, if necessary.
 pub async fn join_wifi(path: String, password: Option<String>) {
-    let conn = Connection::system().await.expect("Could not connect to D-bus");
+    let conn = Connection::system()
+        .await
+        .expect("Could not connect to D-bus");
     let wifi_device_path = find_wifi_device_path(&conn).await.expect("No Wi-Fi");
     connect_to_wifi(&conn, wifi_device_path, path, password).await;
 }
@@ -174,15 +195,15 @@ pub struct WiFiObserver {
 impl WiFiObserver {
     pub fn new() -> Self {
         let (tx, mut _rx) = watch::channel(None);
-        WiFiObserver {
-            sender: tx
-        }
+        WiFiObserver { sender: tx }
     }
 
     pub async fn listen_for_wifi_changes(&self) {
         let connection = Connection::system().await.expect("Could not get bus");
 
-        let wifi_device_path = find_wifi_device_path(&connection).await.expect("Did not find Wi-Fi device path");
+        let wifi_device_path = find_wifi_device_path(&connection)
+            .await
+            .expect("Did not find Wi-Fi device path");
 
         let device_proxy = DeviceProxy::new(&connection, wifi_device_path)
             .await

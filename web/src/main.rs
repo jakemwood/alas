@@ -1,13 +1,13 @@
 use core::do_things;
 use core::wifi::{WiFiNetwork, WiFiObserver};
-use std::io;
-use rocket::{Shutdown};
 use rocket::fs::{FileServer, NamedFile};
 use rocket::http::Status;
 use rocket::response::stream::{Event, EventStream};
-use rocket::serde::{Serialize, json::Json, Deserialize};
-use rocket::State;
+use rocket::serde::{json::Json, Deserialize, Serialize};
 use rocket::tokio::select;
+use rocket::Shutdown;
+use rocket::State;
+use std::io;
 
 #[macro_use]
 extern crate rocket;
@@ -31,7 +31,7 @@ async fn do_null() -> &'static str {
 
 #[derive(Serialize)]
 struct WiFiNetworks {
-    networks: Vec<WiFiNetwork>
+    networks: Vec<WiFiNetwork>,
 }
 #[get("/wifi/available")]
 async fn available_wifi() -> Json<WiFiNetworks> {
@@ -107,6 +107,9 @@ async fn rocket() -> _ {
     rocket::build()
         .manage(wifi_observer)
         .mount("/static", FileServer::from("static"))
-        .mount("/", routes![index, go, events, available_wifi, connect_to_wifi])
+        .mount(
+            "/",
+            routes![index, go, events, available_wifi, connect_to_wifi],
+        )
         .mount("/null", routes![do_null])
 }
