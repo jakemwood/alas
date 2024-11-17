@@ -1,25 +1,33 @@
 mod modem_manager;
 mod network_manager;
+mod utils;
+pub mod wifi;
 
-use zbus::Connection;
-use zbus::zvariant::{OwnedValue, Value};
 use crate::modem_manager::ModemSimpleProxy;
-use crate::network_manager::NetworkManagerProxy;
+use crate::network_manager::{NetworkManagerProxy, WiFiDeviceProxy};
+use zbus::zvariant::OwnedObjectPath;
+use zbus::Connection;
 
-fn value_to_string(owned_value: OwnedValue) -> Result<String, String> {
-    let value = Value::from(owned_value);
-    match value {
-        Value::Str(s) => Ok(s.to_string()),
-        _ => Err("Value is not a string".to_string()),
-    }
+async fn get_all_devices(conn: &Connection) -> Vec<OwnedObjectPath> {
+    let nmp = NetworkManagerProxy::new(&conn).await.expect("Oops");
+    nmp.get_devices().await.expect("No devices")
 }
 
 pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     let conn = Connection::system().await?;
 
-    let nmp = NetworkManagerProxy::new(&conn).await?;
-    let all_devices = nmp.get_all_devices().await?;
-    dbg!(all_devices);
+    // Connect to WiFi
+    // wifi::disconnect_wifi(&conn).await;
+    // wifi::connect_to_wifi(
+    //     &conn,
+    //     wifi_device.clone(),
+    //     access_points
+    //         .first()
+    //         .expect("no access points found"),
+    //     String::from("Southwest Airlines"),
+    // )
+    // .await;
+    // println!("Connected to WiFi?!");
 
     let obj_man_res = zbus::fdo::ObjectManagerProxy::builder(&conn)
         .destination("org.freedesktop.ModemManager1")?
@@ -28,7 +36,10 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     let managed_objects = obj_man_res.get_managed_objects().await?;
-    let keys = managed_objects.keys().map(|k| k.to_owned()).collect::<Vec<_>>();
+    let keys = managed_objects
+        .keys()
+        .map(|k| k.to_owned())
+        .collect::<Vec<_>>();
     if keys.len() != 1 {
         panic!("More modems than expected!");
     }
@@ -37,8 +48,11 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     let simple = ModemSimpleProxy::new(&conn, modem_name).await?;
     let status = simple.get_status().await?;
 
-    let operator_name = value_to_string(
-        status.get("m3gpp-operator-name").expect("No operator name given").to_owned()
+    let operator_name = utils::value_to_string(
+        status
+            .get("m3gpp-operator-name")
+            .expect("No operator name given")
+            .to_owned(),
     )?;
     dbg!(operator_name);
 
@@ -47,7 +61,6 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     // dbg!(sim.operator_name().await?);
     Ok(())
 }
-
 
 // #[cfg(test)]
 // mod tests {

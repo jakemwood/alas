@@ -17,6 +17,8 @@ A 32-bit signed integer (range: -2,147,483,648 to 2,147,483,647).
 
 Example: `-1`, `0`, `100`
 
+## y: Unsigned Integer (8-bit)
+
 ## b: Boolean
 
 Represents a boolean value (true or false).
@@ -28,6 +30,10 @@ Example: `true`
 A D-Bus object path string that uniquely identifies an object.
 
 Example: `"/org/freedesktop/ModemManager1/Modem/0"`
+
+## v: Variant
+
+`Any` type, use `Value` in Zbus
 
 # Composite Type Codes
 
