@@ -1,11 +1,14 @@
-use crate::get_all_devices;
+use crate::network_manager::get_all_devices;
 use crate::network_manager::{
     AccessPointProxy, ActiveConnectionProxy, DeviceProxy, NetworkManagerProxy, StateChangedArgs,
     WiFiDeviceProxy,
 };
 use serde::Serialize;
 use std::collections::HashMap;
-use tokio::sync::watch;
+use std::sync::Arc;
+use tokio::sync::{watch, Mutex, RwLock};
+use tokio::task::JoinHandle;
+use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
 use zbus::proxy::ProxyImpl;
@@ -42,6 +45,15 @@ async fn find_wifi_device(conn: &Connection) -> WiFiDeviceProxy {
     WiFiDeviceProxy::new(conn, path)
         .await
         .expect("No WiFi device proxy")
+}
+
+async fn get_wifi_device_as_device(conn: &Connection) -> DeviceProxy {
+    let path = find_wifi_device_path(&conn)
+        .await
+        .expect("Could not find Wi-Fi device");
+    DeviceProxy::new(conn, path)
+        .await
+        .expect("No DeviceProxy for Wi-Fi")
 }
 
 /// Given a list of paths to Access Points, load the data into a structure that we like
@@ -190,15 +202,17 @@ pub async fn join_wifi(path: String, password: Option<String>) {
 // WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
 pub struct WiFiObserver {
     pub sender: watch::Sender<Option<u32>>,
+    pub state: RwLock<Option<u32>>,
 }
 
 impl WiFiObserver {
     pub fn new() -> Self {
+        println!("Starting WiFi server...");
         let (tx, mut _rx) = watch::channel(None);
-        WiFiObserver { sender: tx }
+        WiFiObserver { sender: tx, state: RwLock::new(None) }
     }
 
-    pub async fn listen_for_wifi_changes(&self) {
+    pub async fn listen_for_wifi_changes(&self) -> JoinHandle<()> {
         let connection = Connection::system().await.expect("Could not get bus");
 
         let wifi_device_path = find_wifi_device_path(&connection)
@@ -210,23 +224,45 @@ impl WiFiObserver {
             .expect("no device proxy");
 
         let sender = self.sender.clone();
+        let current_state = self.refresh_current_wifi_state().await.unwrap();
 
         tokio::spawn(async move {
-            println!("The task is spawned!");
+            // Get the current state
+            println!("Current state is {:?}", current_state);
+            match sender.send(Some(current_state)) {
+                Ok(_) => {}
+                Err(err) => {
+                    println!("Error sending Wi-Fi state: {:?}", err);
+                }
+            }
+
             let mut state_change_stream = device_proxy
                 .receive_signal_state_changed()
                 .await
                 .expect("Could not start stream?");
+
             println!("Waiting for network changes...");
             while let Some(msg) = state_change_stream.next().await {
                 println!("Something happened?");
                 let args: StateChangedArgs = msg.args().expect("Error parsing message");
                 dbg!(&args);
-                match sender.send(Some(args.new_state)) {
-                    Ok(_) => {}
-                    Err(_) => {}
-                }
+                let _ = sender.send(Some(args.new_state));
             }
-        });
+        })
+    }
+
+    pub async fn refresh_current_wifi_state(&self) -> Option<u32> {
+        println!("getting current state!");
+        let conn = Connection::system()
+            .await
+            .expect("Could not connect to D-bus");
+        let wifi_device = get_wifi_device_as_device(&conn).await;
+        let mut state = self.state.write().await;
+        *state = Some(wifi_device.state().await.unwrap());
+        *state
+    }
+
+    pub async fn get_state(&self) -> Option<u32> {
+        *self.state.read().await
     }
 }

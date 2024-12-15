@@ -1,17 +1,11 @@
+mod audio;
 mod modem_manager;
 mod network_manager;
 mod utils;
 pub mod wifi;
 
 use crate::modem_manager::ModemSimpleProxy;
-use crate::network_manager::{NetworkManagerProxy, WiFiDeviceProxy};
-use zbus::zvariant::OwnedObjectPath;
 use zbus::Connection;
-
-async fn get_all_devices(conn: &Connection) -> Vec<OwnedObjectPath> {
-    let nmp = NetworkManagerProxy::new(&conn).await.expect("Oops");
-    nmp.get_devices().await.expect("No devices")
-}
 
 pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     let conn = Connection::system().await?;

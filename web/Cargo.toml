@@ -7,4 +7,7 @@ edition = "2021"
 rocket = { version = "0.5.1", features = ["json"] }
 serde = "1.0.215"
 core = { path = "../core" }
-#sentry = "0.34.0"
+tokio = "1.41.1"
+#sentry = "0.35.0"
+#cpal = "0.15.3"
+serialport = "4.6.1"

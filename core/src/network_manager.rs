@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use zbus::zvariant::{OwnedObjectPath, Value};
-use zbus::{proxy, Result};
+use zbus::{proxy, Connection, Result};
 
 #[proxy(
     default_service = "org.freedesktop.NetworkManager",
@@ -318,3 +318,8 @@ pub trait ActiveConnection {
 //         }
 //     }
 // }
+
+pub async fn get_all_devices(conn: &Connection) -> Vec<OwnedObjectPath> {
+    let nmp = NetworkManagerProxy::new(&conn).await.expect("Oops");
+    nmp.get_devices().await.expect("No devices")
+}
