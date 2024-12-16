@@ -66,3 +66,9 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
 //         assert_eq!(result, 4);
 //     }
 // }
+
+#[derive(Debug, Clone)]
+pub enum RidgelineMessage {
+    NetworkStatusChange { new_state: u32 },
+    Ticker { count: u32 },
+}

@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::cmp::{max, min};
 use core::RidgelineMessage;
 use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
@@ -29,7 +28,7 @@ const RIGHT_BUTTON: u8 = 67;
 const DOWN_BUTTON: u8 = 72;
 const BOTTOM_LEFT_BUTTON: u8 = 71;
 
-trait Screen: Send + Sync {
+trait ScreenImpl {
     // Draw the screen from scratch
     fn draw_screen(&self, port: &mut Box<dyn SerialPort>);
 
@@ -37,104 +36,79 @@ trait Screen: Send + Sync {
     // TODO: do we need old state?
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>);
 
-    // Handle a button being pressed
-    fn handle_button(&self, button: u8) -> Box<dyn Screen>;
-
-    // Handle an incoming message from the bus
-    fn handle_message(&self, message: RidgelineMessage) -> Box<dyn Screen>;
+    fn handle_button(&self, button: u8) -> Box<dyn ScreenImpl>;
 }
 
-#[derive(Clone)]
+impl PartialEq for dyn ScreenImpl {
+    fn eq(&self, other: &Self) -> bool {
+        // TODO: is this right?
+        self.eq(other)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct HomeScreen {
-    wifi_ready: bool,
-    cell_ready: bool,
     left_volume: u8,
     right_volume: u8,
+    wifi_status: bool,
+    cell_status: bool
 }
 
-impl HomeScreen {
-    fn new() -> Self {
-        HomeScreen {
-            wifi_ready: false,
-            cell_ready: false,
-            left_volume: 0,
-            right_volume: 0,
-        }
-    }
-}
-
-impl Screen for HomeScreen {
+impl ScreenImpl for HomeScreen {
     fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
-        port.write_all("88.7 RIDGELINE RADIO".as_bytes()).unwrap();
-        port.write_all("Wi-Fi? ".as_bytes()).unwrap();
-        if self.wifi_ready {
-            port.write_all("Y".as_bytes()).unwrap();
+        let mut bytes_to_write: Vec<u8> = Vec::new();
+
+        bytes_to_write.extend("88.7 RIDGELINE RADIO".as_bytes());
+
+        bytes_to_write.extend(set_cursor_bytes(10, 2));
+        if self.wifi_status {
+            bytes_to_write.extend("WiFi On".as_bytes());
         }
         else {
-            port.write_all("N".as_bytes()).unwrap();
+            bytes_to_write.extend("WiFi Off".as_bytes());
         }
-        port.write_all(" Cell ".as_bytes());
-        if self.cell_ready {
-            port.write_all("Y".as_bytes()).unwrap();
-        }
-        else {
-            port.write_all("N".as_bytes()).unwrap();
-        }
+
+        let _ = port.write_all(bytes_to_write.as_slice());
     }
 
-    fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
-        // Do nothing!
+    fn redraw_screen(&self, _port: &mut Box<dyn SerialPort>) {
+        // do nothing just yet
     }
 
-    fn handle_button(&self, button: u8) -> Box<dyn Screen> {
-        // All buttons should open the menu
-        Box::new(MenuScreen::new())
-    }
-
-    fn handle_message(&self, message: RidgelineMessage) -> Box<dyn Screen> {
-        // Do nothing with messages
-        Box::new(self.clone())
+    fn handle_button(&self, _button: u8) -> Box<dyn ScreenImpl> {
+        // Any button should start the menu
+        Box::new(MenuScreen {
+            current_option: 1
+        })
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct MenuScreen {
-    current: u8
+    current_option: u8
 }
 
-impl MenuScreen {
-    fn new() -> Self {
-        MenuScreen { current: 1 }
-    }
-}
-
-impl Screen for MenuScreen {
+impl ScreenImpl for MenuScreen {
     fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
         let options = ["Reboot", "Reset Settings", "Antoher Seting", "Another seting"];
 
         let mut bytes_to_write: Vec<u8> = Vec::new();
+        bytes_to_write.extend("* ".as_bytes());
 
         let mut row = 1;
         for option in options {
-            if row == self.current {
-                bytes_to_write.extend("* ".as_bytes());
-            }
-            else {
-                bytes_to_write.extend("  ".as_bytes());
-            }
             bytes_to_write.extend(option.as_bytes());
             row += 1;
-            bytes_to_write.extend(set_cursor_bytes(1, row));
+            bytes_to_write.extend(set_cursor_bytes(3, row));
         }
 
         port.write_all(bytes_to_write.as_slice()).unwrap();
     }
 
-
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
         for row in 1..5 {
             port.write_all(set_cursor_bytes(1, row).as_slice()).unwrap();
-            if row == self.current {
+            if row == self.current_option {
                 port.write_all("*".as_bytes()).unwrap();
             }
             else {
@@ -143,45 +117,50 @@ impl Screen for MenuScreen {
         }
     }
 
-    fn handle_button(&self, button: u8) -> Box<dyn Screen> {
+    fn handle_button(&self, button: u8) -> Box<dyn ScreenImpl> {
         match button {
             UP_BUTTON => {
                 Box::new(MenuScreen {
-                    current: max(self.current - 1, 1),
+                    current_option: max(self.current_option - 1, 0),
                 })
             },
             DOWN_BUTTON => {
                 Box::new(MenuScreen {
-                    current: min(self.current + 1, 4),
+                    current_option: min(self.current_option + 1, 4),
                 })
             },
             CENTER_BUTTON => {
-                Box::new(HomeScreen::new())
+                todo!()
             },
             TOP_LEFT_BUTTON | BOTTOM_LEFT_BUTTON => {
-                Box::new(HomeScreen::new())
+                todo!()
             },
             _ => {
-                // TODO: is there a better way for this?
                 Box::new(self.clone())
             },
         }
     }
-
-    fn handle_message(&self, _: RidgelineMessage) -> Box<dyn Screen> {
-        // Do nothing!
-        Box::new(self.clone())
-    }
 }
 
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum Screen {
+    Home(HomeScreen),
+    Menu(MenuScreen),
+}
+
+#[derive(Debug, Copy, Clone)]
+struct LCDState {
+    current_screen: Screen,
+}
 
 fn handle_message(message: RidgelineMessage, write_port: &mut Box<dyn SerialPort>) {
     let mut bytes_to_write: Vec<u8> = Vec::new();
     match message {
         RidgelineMessage::Ticker { count } => {
-            // bytes_to_write.extend(&[254, 71, 1, 1]);
-            // bytes_to_write.extend(count.to_string().as_bytes());
-            // println!("Writing out to display!!");
+            bytes_to_write.extend(&[254, 71, 1, 1]);
+            bytes_to_write.extend(count.to_string().as_bytes());
+            println!("Writing out to display!!");
         }
         RidgelineMessage::NetworkStatusChange { new_state } => {
             if new_state == 100 {
@@ -209,7 +188,14 @@ fn connect() -> Box<dyn SerialPort> {
 }
 
 pub async fn start(mut lcd_rx: Receiver<RidgelineMessage>) {
-    let mut state: Arc<RwLock<Box<dyn Screen>>> = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
+    let mut state = Arc::new(RwLock::new(LCDState {
+        current_screen: Screen::Home(HomeScreen {
+            left_volume: 0,
+            right_volume: 0,
+            wifi_status: false,
+            cell_status: false,
+        }),
+    }));
 
     let mut port = connect();
     // port is safe to clone, but ideally have a read/write clone
@@ -220,7 +206,7 @@ pub async fn start(mut lcd_rx: Receiver<RidgelineMessage>) {
     let mut write_port = port.try_clone().expect("Could not create write port");
     let lcd_writer = task::spawn(async move {
         // Setup our display
-        // reset_screen(&mut write_port).expect("Could not reset screen");
+        reset_screen(&mut write_port).expect("Could not reset screen");
         set_brightness(&mut write_port, 0.5).expect("Could not set brightness"); // Set brightness to 50%
 
         // Now listen for any events that we need in order to process writes to our screen
@@ -244,60 +230,44 @@ pub async fn start(mut lcd_rx: Receiver<RidgelineMessage>) {
     // button presses as needed.
     let read_state = state.clone();
     // let tokio_handle = Handle::current();
-    let mut read_port = port.try_clone().expect("Could not create read port");
     let lcd_reader = task::spawn(async move {
         loop {
-            let button_pressed = {
+            let data_to_process = {
                 let mut buf = [0; 2];
-                let bytes_read = read_port.read(buf.as_mut_slice());
+                let bytes_read = port.read(buf.as_mut_slice());
                 match bytes_read {
                     Ok(bytes_read) => buf[..bytes_read].to_vec(),
                     Err(ref e) if e.kind() == io::ErrorKind::TimedOut => continue,
                     Err(e) => panic!("{:?}", e),
                 }
             };
-            handle_button(read_state.clone(), button_pressed, &mut read_port).await;
+
+            handle_button(data_to_process, read_state.clone(), &mut port).await;
         }
     });
-
-    // Now that everything is started, send the first screen
-    {
-        let first_screen = state.read().await;
-        println!("Writing the first screen...");
-        clear_screen(&mut port).expect("Could not clear the screen");
-        first_screen.draw_screen(&mut port);
-    }
 
     lcd_writer.await.unwrap();
     lcd_reader.await.unwrap();
 }
 
 async fn handle_button(
-    current_state: Arc<RwLock<Box<dyn Screen>>>,
     data_to_process: Vec<u8>,
+    rw_state: Arc<RwLock<LCDState>>,
     port: &mut Box<dyn SerialPort>
 ) {
+    let mut state = *(rw_state.write().await);
     let button_pressed = data_to_process[0];
-    println!("Button pressed: {:?}", button_pressed);
-    let new_screen = {
-        let current_screen = current_state.read().await;
-        current_screen.handle_button(button_pressed)
-    };
-    println!("New screen has been acquired");
-    {
-        let mut screen = current_state.write().await;
-        println!("State write lock has been acquired");
-        if current_state.as_ref().type_id() != new_screen.as_ref().type_id() {
-            println!("draw screen! {:?} {:?}",
-                     current_state.as_ref().type_id(),
-                     new_screen.as_ref().type_id());
-            let _ = clear_screen(port);
-            new_screen.draw_screen(port);
-        } else {
-            new_screen.redraw_screen(port);
-        }
 
-        *screen = new_screen;
+    let new_state = state.current_screen.handle_button(button_pressed);
+
+    // Reload the read state
+    if new_state != state {
+        println!("New screen is: {:?}", new_state);
+        let _ = clear_screen(port);
+        new_state.draw_screen(port);
+    }
+    else {
+        new_state.redraw_screen(port);
     }
 }
 

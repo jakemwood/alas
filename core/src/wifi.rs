@@ -3,16 +3,16 @@ use crate::network_manager::{
     AccessPointProxy, ActiveConnectionProxy, DeviceProxy, NetworkManagerProxy, StateChangedArgs,
     WiFiDeviceProxy,
 };
+use crate::RidgelineMessage;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::{watch, Mutex, RwLock};
+use tokio::sync::broadcast::Sender;
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
 use zbus::proxy::ProxyImpl;
-use zbus::zvariant::{ObjectPath, OwnedObjectPath, Value};
+use zbus::zvariant::{OwnedObjectPath, Value};
 use zbus::Connection;
 
 /// Find the device path that is responsible for Wi-Fi.
@@ -201,15 +201,18 @@ pub async fn join_wifi(path: String, password: Option<String>) {
 
 // WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
 pub struct WiFiObserver {
-    pub sender: watch::Sender<Option<u32>>,
+    pub sender: Sender<RidgelineMessage>,
     pub state: RwLock<Option<u32>>,
 }
 
 impl WiFiObserver {
-    pub fn new() -> Self {
+    pub fn new(broadcast: Sender<RidgelineMessage>) -> Self {
         println!("Starting WiFi server...");
-        let (tx, mut _rx) = watch::channel(None);
-        WiFiObserver { sender: tx, state: RwLock::new(None) }
+        // let (tx, mut _rx) = watch::channel(None);
+        WiFiObserver {
+            sender: broadcast,
+            state: RwLock::new(None),
+        }
     }
 
     pub async fn listen_for_wifi_changes(&self) -> JoinHandle<()> {
@@ -229,7 +232,9 @@ impl WiFiObserver {
         tokio::spawn(async move {
             // Get the current state
             println!("Current state is {:?}", current_state);
-            match sender.send(Some(current_state)) {
+            match sender.send(RidgelineMessage::NetworkStatusChange {
+                new_state: current_state,
+            }) {
                 Ok(_) => {}
                 Err(err) => {
                     println!("Error sending Wi-Fi state: {:?}", err);
@@ -246,7 +251,9 @@ impl WiFiObserver {
                 println!("Something happened?");
                 let args: StateChangedArgs = msg.args().expect("Error parsing message");
                 dbg!(&args);
-                let _ = sender.send(Some(args.new_state));
+                let _ = sender.send(RidgelineMessage::NetworkStatusChange {
+                    new_state: args.new_state,
+                });
             }
         })
     }

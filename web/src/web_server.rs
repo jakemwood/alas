@@ -9,6 +9,7 @@ use rocket::{get, launch, post, routes, Build, Error, Ignite, Rocket, Shutdown, 
 use std::io;
 use std::sync::Arc;
 use tokio::select;
+use tokio::sync::broadcast::Receiver;
 use tokio::task::JoinHandle;
 
 #[get("/")]
@@ -62,41 +63,38 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
     Status::Created
 }
 
-#[get("/events")]
-async fn events(wifi_observer: &State<Arc<WiFiObserver>>, mut end: Shutdown) -> EventStream![] {
-    let mut wifi_receiver = wifi_observer.sender.subscribe();
-    EventStream! {
-        yield Event::data("hello");
-        loop {
-            let msg = *wifi_receiver.borrow_and_update();
-            if let Some(state_code) = msg {
-                println!("Sending server sent event stuff...");
-                yield Event::data(state_code.to_string());
-            }
-            select! {
-                val = wifi_receiver.changed() => {
-                    if val.is_err() {
-                        yield Event::data("wifi receiver disappeared!");
-                        break;
-                    }
-                }
-                _ = &mut end => {
-                    println!("This worked correctly!");
-                    break;
-                }
-            }
-        }
-    }
-}
+// #[get("/events")]
+// async fn events(broadcast: &State<Receiver<u32>>, mut end: Shutdown) -> EventStream![] {
+//     // let mut receiver =
+//     EventStream! {
+//         yield Event::data("hello");
+//         loop {
+//             let msg = *broadcast.borrow_and_update();
+//             if let Some(state_code) = msg {
+//                 println!("Sending server sent event stuff...");
+//                 yield Event::data(state_code.to_string());
+//             }
+//             select! {
+//                 val = broadcast.changed() => {
+//                     if val.is_err() {
+//                         yield Event::data("wifi receiver disappeared!");
+//                         break;
+//                     }
+//                 }
+//                 _ = &mut end => {
+//                     println!("This worked correctly!");
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+// }
 
 fn rocket(wifi_observer: Arc<WiFiObserver>) -> Rocket<Build> {
     rocket::build()
         .manage(wifi_observer)
         .mount("/static", FileServer::from("static"))
-        .mount(
-            "/",
-            routes![index, go, events, available_wifi, connect_to_wifi],
-        )
+        .mount("/", routes![index, go, available_wifi, connect_to_wifi])
         .mount("/null", routes![do_null])
 }
 
