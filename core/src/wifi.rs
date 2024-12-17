@@ -6,6 +6,7 @@ use crate::network_manager::{
 use crate::RidgelineMessage;
 use serde::Serialize;
 use std::collections::HashMap;
+use tokio::{select, signal};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
@@ -247,14 +248,21 @@ impl WiFiObserver {
                 .expect("Could not start stream?");
 
             println!("Waiting for network changes...");
-            while let Some(msg) = state_change_stream.next().await {
-                println!("Something happened?");
-                let args: StateChangedArgs = msg.args().expect("Error parsing message");
-                dbg!(&args);
-                let _ = sender.send(RidgelineMessage::NetworkStatusChange {
-                    new_state: args.new_state,
-                });
+            loop {
+                select! {
+                    Some(msg) = state_change_stream.next() => {
+                        let args: StateChangedArgs = msg.args().expect("Error parsing message");
+                        dbg!(&args);
+                        let _ = sender.send(RidgelineMessage::NetworkStatusChange {
+                            new_state: args.new_state,
+                        });
+                    },
+                    _ = signal::ctrl_c() => {
+                        break;
+                    }
+                }
             }
+            println!("Exiting the Wi-Fi loop!");
         })
     }
 

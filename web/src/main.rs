@@ -14,7 +14,7 @@ use std::time::Duration;
 use tokio;
 use tokio::runtime::Handle;
 use tokio::sync::broadcast;
-use tokio::task;
+use tokio::{signal, task};
 use tokio::time::sleep;
 
 fn fake_ticker(event_bus: broadcast::Sender<RidgelineMessage>) {
@@ -33,7 +33,7 @@ fn fake_ticker(event_bus: broadcast::Sender<RidgelineMessage>) {
 #[tokio::main]
 async fn main() {
     let tokio_handle = Handle::current();
-    let (event_bus, _) = broadcast::channel::<RidgelineMessage>(16);
+    let (event_bus, _) = broadcast::channel::<RidgelineMessage>(256);
     let mut lcd_rx = event_bus.subscribe();
 
     let wifi_observer = WiFiObserver::new(event_bus.clone());
@@ -43,18 +43,23 @@ async fn main() {
     // fake_ticker(event_bus.clone());
 
     // LCD screen stuff
-    // TODO: refactor once Rust makes sense
-    let lcd_server = lcd_display::start(lcd_rx).await;
+    let (lcd_rx, lcd_tx) = lcd_display::start(lcd_rx);
     println!("Ready to start some more business! Like the web server!");
-    wifi_changes.await.unwrap();
 
-    // match signal::ctrl_c().await {
-    //     Ok(()) => {},
-    //     Err(err) => {
-    //         eprintln!("Unable to listen for shutdown signal: {}", err);
-    //         // we also shut down in case of error
-    //     },
-    // }
+    let audio = core::audio::start(event_bus.clone());
+
+    // Await all of our "threads" here
+    signal::ctrl_c().await.expect("failed to listen for event");
+    let _ = event_bus.send(RidgelineMessage::Exit);
+
+    println!("Waiting for Wi-Fi to unwrap...");
+    wifi_changes.await.unwrap();
+    println!("Waiting for lcd rx to unwrap...");
+    lcd_rx.await.unwrap();
+    println!("Waiting for lcd tx to unwrap...");
+    lcd_tx.await.unwrap();
+    println!("Waiting for audio to unwrap...");
+    audio.await.unwrap().expect("Audio panicked");
 
     // let shutdown = web_server::run_rocket_server(wifi_observer.clone()).await;
     // tasks.spawn(shutdown);

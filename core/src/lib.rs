@@ -1,4 +1,4 @@
-mod audio;
+pub mod audio;
 mod modem_manager;
 mod network_manager;
 mod utils;
@@ -69,6 +69,8 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
 
 #[derive(Debug, Clone)]
 pub enum RidgelineMessage {
+    Exit,
     NetworkStatusChange { new_state: u32 },
     Ticker { count: u32 },
+    VolumeChange { left: f32, right: f32 },
 }
