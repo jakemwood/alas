@@ -6,16 +6,14 @@ mod web_server;
 use core::wifi::WiFiObserver;
 use core::RidgelineMessage;
 use rocket::serde::{Deserialize, Serialize};
-use serde::__private::de::Content::ByteBuf;
 use serialport::SerialPort;
-use std::io;
 use std::io::Write;
 use std::time::Duration;
 use tokio;
 use tokio::runtime::Handle;
 use tokio::sync::broadcast;
-use tokio::{signal, task};
 use tokio::time::sleep;
+use tokio::signal;
 
 fn fake_ticker(event_bus: broadcast::Sender<RidgelineMessage>) {
     let event_bus_clone = event_bus.clone();

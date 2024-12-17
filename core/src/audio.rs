@@ -1,14 +1,12 @@
-use std::thread::sleep;
-use std::time::Duration;
-use cpal::Sample;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::Sample;
 use tokio::runtime::Handle;
 use tokio::sync::broadcast::Sender;
 
-use tokio::{signal, task};
-use tokio::task::JoinHandle;
 use crate::RidgelineMessage;
 use crate::RidgelineMessage::VolumeChange;
+use tokio::task::JoinHandle;
+use tokio::{signal, task};
 
 pub fn start(bus: Sender<RidgelineMessage>) -> JoinHandle<Result<(), ()>> {
     let handler = Handle::current();
