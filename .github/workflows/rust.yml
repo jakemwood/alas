@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - run: apt -y install alsa-base alsa-utils
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
