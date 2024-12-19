@@ -1,6 +1,8 @@
 pub mod audio;
+mod config;
 mod modem_manager;
 mod network_manager;
+pub mod state;
 mod utils;
 pub mod wifi;
 
@@ -56,6 +58,14 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[derive(Debug, Clone)]
+pub enum RidgelineMessage {
+    Exit,
+    NetworkStatusChange { new_state: u32 },
+    Ticker { count: u32 },
+    VolumeChange { left: f32, right: f32 },
+}
+
 // #[cfg(test)]
 // mod tests {
 //     use super::*;
@@ -66,11 +76,3 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
 //         assert_eq!(result, 4);
 //     }
 // }
-
-#[derive(Debug, Clone)]
-pub enum RidgelineMessage {
-    Exit,
-    NetworkStatusChange { new_state: u32 },
-    Ticker { count: u32 },
-    VolumeChange { left: f32, right: f32 },
-}

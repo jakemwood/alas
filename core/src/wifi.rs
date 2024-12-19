@@ -6,10 +6,10 @@ use crate::network_manager::{
 use crate::RidgelineMessage;
 use serde::Serialize;
 use std::collections::HashMap;
-use tokio::{select, signal};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
+use tokio::{select, signal};
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
 use zbus::proxy::ProxyImpl;
@@ -48,6 +48,7 @@ async fn find_wifi_device(conn: &Connection) -> WiFiDeviceProxy {
         .expect("No WiFi device proxy")
 }
 
+/// Get a Z-bux proxy for working with the Device (with a capital "D") that is responsible for Wi-Fi
 async fn get_wifi_device_as_device(conn: &Connection) -> DeviceProxy {
     let path = find_wifi_device_path(&conn)
         .await
@@ -164,7 +165,7 @@ async fn disconnect_wifi(conn: &Connection) {
  PUBLIC API
 ******************************************************************/
 
-// This structure represents the basics of a Wi-Fi network
+/// This structure represents the basics of a Wi-Fi network
 #[derive(Debug, Serialize)]
 pub struct WiFiNetwork {
     pub ssid: String,
@@ -174,7 +175,7 @@ pub struct WiFiNetwork {
     pub security: String,
 }
 
-// Get a list of Wi-Fi networks
+/// Get a list of Wi-Fi networks
 pub async fn get_wifi_networks() -> Vec<WiFiNetwork> {
     let conn = Connection::system()
         .await
@@ -191,7 +192,7 @@ pub async fn get_wifi_networks() -> Vec<WiFiNetwork> {
     load_access_points(&conn, raw_access_points.clone()).await
 }
 
-// Join a Wi-Fi network, given an Access Point Path and the password, if necessary.
+/// Join a Wi-Fi network, given an Access Point Path and the password, if necessary.
 pub async fn join_wifi(path: String, password: Option<String>) {
     let conn = Connection::system()
         .await
@@ -200,7 +201,7 @@ pub async fn join_wifi(path: String, password: Option<String>) {
     connect_to_wifi(&conn, wifi_device_path, path, password).await;
 }
 
-// WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
+/// WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
 pub struct WiFiObserver {
     pub sender: Sender<RidgelineMessage>,
     pub state: RwLock<Option<u32>>,
@@ -209,7 +210,6 @@ pub struct WiFiObserver {
 impl WiFiObserver {
     pub fn new(broadcast: Sender<RidgelineMessage>) -> Self {
         println!("Starting WiFi server...");
-        // let (tx, mut _rx) = watch::channel(None);
         WiFiObserver {
             sender: broadcast,
             state: RwLock::new(None),

@@ -3,17 +3,19 @@ extern crate rocket;
 mod lcd_display;
 mod web_server;
 
+use core::state::UranusState;
 use core::wifi::WiFiObserver;
 use core::RidgelineMessage;
 use rocket::serde::{Deserialize, Serialize};
 use serialport::SerialPort;
 use std::io::Write;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio;
 use tokio::runtime::Handle;
-use tokio::sync::broadcast;
-use tokio::time::sleep;
 use tokio::signal;
+use tokio::sync::{broadcast, RwLock};
+use tokio::time::sleep;
 
 fn fake_ticker(event_bus: broadcast::Sender<RidgelineMessage>) {
     let event_bus_clone = event_bus.clone();
@@ -28,34 +30,39 @@ fn fake_ticker(event_bus: broadcast::Sender<RidgelineMessage>) {
         }
     });
 }
+
+type UnsafeState = UranusState;
+type SafeState = Arc<RwLock<UranusState>>;
+
 #[tokio::main]
 async fn main() {
+    let state = Arc::new(RwLock::new(UranusState::new()));
+
     let tokio_handle = Handle::current();
+
     let (event_bus, _) = broadcast::channel::<RidgelineMessage>(256);
-    let mut lcd_rx = event_bus.subscribe();
+    let lcd_rx = event_bus.subscribe();
+    let (lcd_rx_thread, lcd_tx_thread) = lcd_display::start(lcd_rx, state.clone()).await;
 
     let wifi_observer = WiFiObserver::new(event_bus.clone());
     let wifi_changes = wifi_observer.listen_for_wifi_changes().await;
 
     // Create a fake ticker to demonstrate our channels work.
     // fake_ticker(event_bus.clone());
-
-    // LCD screen stuff
-    let (lcd_rx, lcd_tx) = lcd_display::start(lcd_rx);
     println!("Ready to start some more business! Like the web server!");
 
     let audio = core::audio::start(event_bus.clone());
 
-    // Await all of our "threads" here
     signal::ctrl_c().await.expect("failed to listen for event");
     let _ = event_bus.send(RidgelineMessage::Exit);
 
+    // Await all of our "threads" here to clean up...
     println!("Waiting for Wi-Fi to unwrap...");
     wifi_changes.await.unwrap();
     println!("Waiting for lcd rx to unwrap...");
-    lcd_rx.await.unwrap();
+    lcd_rx_thread.await.unwrap();
     println!("Waiting for lcd tx to unwrap...");
-    lcd_tx.await.unwrap();
+    lcd_tx_thread.await.unwrap();
     println!("Waiting for audio to unwrap...");
     audio.await.unwrap().expect("Audio panicked");
 

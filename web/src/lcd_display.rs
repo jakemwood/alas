@@ -1,15 +1,16 @@
+use crate::{SafeState, UnsafeState};
 use core::RidgelineMessage;
+use rocket::yansi::Paint;
 use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
 use std::any::Any;
 use std::cmp::{max, min};
 use std::io::{self, Read, Write};
 use std::sync::Arc;
 use std::time::Duration;
-use rocket::yansi::Paint;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::RwLock;
-use tokio::{select, signal, task};
 use tokio::task::JoinHandle;
+use tokio::{select, signal, task};
 
 const SCREEN_WIDTH: u8 = 20;
 
@@ -41,10 +42,14 @@ trait Screen: Send + Sync + Any {
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>);
 
     // Handle a button being pressed
-    fn handle_button(&self, button: u8) -> Option<Box<dyn Screen>>;
+    fn handle_button(&self, app_state: &UnsafeState, button: u8) -> Option<Box<dyn Screen>>;
 
     // Handle an incoming message from the bus
-    fn handle_message(&self, message: RidgelineMessage) -> Option<Box<dyn Screen>>;
+    fn handle_message(
+        &self,
+        app_state: &UnsafeState,
+        message: RidgelineMessage,
+    ) -> Option<Box<dyn Screen>>;
 
     fn as_any(&self) -> &dyn Any;
 }
@@ -58,10 +63,10 @@ struct HomeScreen {
 }
 
 impl HomeScreen {
-    fn new() -> Self {
+    fn new(app_state: &UnsafeState) -> Self {
         HomeScreen {
-            wifi_ready: false,
-            cell_ready: false,
+            wifi_ready: app_state.wifi_on,
+            cell_ready: app_state.cell_on,
             left_volume: 0,
             right_volume: 0,
         }
@@ -96,15 +101,13 @@ impl Screen for HomeScreen {
         // // TODO(!): we can use messaging to trigger updates, but still should be central repo?
         if self.wifi_ready {
             port.write_all("Y".as_bytes()).unwrap();
-        }
-        else {
+        } else {
             port.write_all("N".as_bytes()).unwrap();
         }
         port.write_all(" Cell ".as_bytes()).unwrap();
         if self.cell_ready {
             port.write_all("Y".as_bytes()).unwrap();
-        }
-        else {
+        } else {
             port.write_all("N".as_bytes()).unwrap();
         }
         // // Draw left
@@ -114,8 +117,10 @@ impl Screen for HomeScreen {
         port.write_all(&*set_cursor_bytes(1, 4)).unwrap();
         port.write_all("R ".as_bytes()).unwrap();
 
-        port.write_all(&[254, 124, 3, 3, 0, self.left_volume]).unwrap();
-        port.write_all(&[254, 124, 3, 4, 0, self.right_volume]).unwrap();
+        port.write_all(&[254, 124, 3, 3, 0, self.left_volume])
+            .unwrap();
+        port.write_all(&[254, 124, 3, 4, 0, self.right_volume])
+            .unwrap();
     }
 
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
@@ -124,32 +129,32 @@ impl Screen for HomeScreen {
 
         // let left_scaled = ((1.0 + left_db / min_db) * 100.0).clamp(0.0, 100.0);
         // let right_scaled = ((1.0 + right_db / min_db) * 100.0).clamp(0.0, 100.0);
-        port.write_all(&[254, 124, 3, 3, 0, self.left_volume]).unwrap();
-        port.write_all(&[254, 124, 3, 4, 0, self.right_volume]).unwrap();
+        port.write_all(&[254, 124, 3, 3, 0, self.left_volume])
+            .unwrap();
+        port.write_all(&[254, 124, 3, 4, 0, self.right_volume])
+            .unwrap();
         // println!("Left volume {:?} Right Volume {:?}", self.left_volume, self.right_volume);
     }
 
-    fn handle_button(&self, button: u8) -> Option<Box<dyn Screen>> {
+    fn handle_button(&self, _: &UnsafeState, button: u8) -> Option<Box<dyn Screen>> {
         // All buttons should open the menu
         if button == TOP_LEFT_BUTTON {
             Some(Box::new(MenuScreen::new()))
-        }
-        else if button == UP_BUTTON {
-            Some(Box::new(HomeScreen {
-                wifi_ready: self.wifi_ready,
-                cell_ready: self.cell_ready,
-                left_volume: self.left_volume + 1,
-                right_volume: self.right_volume + 1,
-            }))
-        }
-        else {
+        } else {
             None
         }
     }
 
-    fn handle_message(&self, message: RidgelineMessage) -> Option<Box<dyn Screen>> {
+    fn handle_message(
+        &self,
+        _: &UnsafeState,
+        message: RidgelineMessage,
+    ) -> Option<Box<dyn Screen>> {
         match message {
-            RidgelineMessage::VolumeChange { left: left_db, right: right_db } => {
+            RidgelineMessage::VolumeChange {
+                left: left_db,
+                right: right_db,
+            } => {
                 let left_scaled = scale_db_to_display(left_db);
                 let right_scaled = scale_db_to_display(right_db);
 
@@ -159,7 +164,7 @@ impl Screen for HomeScreen {
                     left_volume: left_scaled,
                     right_volume: right_scaled,
                 }))
-            },
+            }
             _ => None,
         }
     }
@@ -171,7 +176,7 @@ impl Screen for HomeScreen {
 
 #[derive(Clone, PartialEq)]
 struct MenuScreen {
-    current: u8
+    current: u8,
 }
 
 impl MenuScreen {
@@ -186,7 +191,12 @@ impl Screen for MenuScreen {
     }
 
     fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
-        let options = ["Reboot", "Reset Settings", "Another Setting", "Another setting"];
+        let options = [
+            "Reboot",
+            "Reset Settings",
+            "Another Setting",
+            "Another setting",
+        ];
 
         let mut bytes_to_write: Vec<u8> = Vec::new();
 
@@ -194,8 +204,7 @@ impl Screen for MenuScreen {
         for option in options {
             if row == self.current {
                 bytes_to_write.extend("* ".as_bytes());
-            }
-            else {
+            } else {
                 bytes_to_write.extend("  ".as_bytes());
             }
             bytes_to_write.extend(option.as_bytes());
@@ -206,44 +215,32 @@ impl Screen for MenuScreen {
         port.write_all(bytes_to_write.as_slice()).unwrap();
     }
 
-
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
         for row in 1..5 {
             port.write_all(set_cursor_bytes(1, row).as_slice()).unwrap();
             if row == self.current {
                 port.write_all("*".as_bytes()).unwrap();
-            }
-            else {
+            } else {
                 port.write_all(" ".as_bytes()).unwrap();
             }
         }
     }
 
-    fn handle_button(&self, button: u8) -> Option<Box<dyn Screen>> {
+    fn handle_button(&self, app_state: &UnsafeState, button: u8) -> Option<Box<dyn Screen>> {
         match button {
-            UP_BUTTON => {
-                Some(Box::new(MenuScreen {
-                    current: max(self.current - 1, 1),
-                }))
-            },
-            DOWN_BUTTON => {
-                Some(Box::new(MenuScreen {
-                    current: min(self.current + 1, 4),
-                }))
-            },
-            CENTER_BUTTON => {
-                Some(Box::new(HomeScreen::new()))
-            },
-            TOP_LEFT_BUTTON | BOTTOM_LEFT_BUTTON => {
-                Some(Box::new(HomeScreen::new()))
-            },
-            _ => {
-                None
-            },
+            UP_BUTTON => Some(Box::new(MenuScreen {
+                current: max(self.current - 1, 1),
+            })),
+            DOWN_BUTTON => Some(Box::new(MenuScreen {
+                current: min(self.current + 1, 4),
+            })),
+            CENTER_BUTTON => Some(Box::new(HomeScreen::new(app_state))),
+            TOP_LEFT_BUTTON | BOTTOM_LEFT_BUTTON => Some(Box::new(HomeScreen::new(app_state))),
+            _ => None,
         }
     }
 
-    fn handle_message(&self, _: RidgelineMessage) -> Option<Box<dyn Screen>> {
+    fn handle_message(&self, _: &UnsafeState, _: RidgelineMessage) -> Option<Box<dyn Screen>> {
         // Do nothing!
         None
     }
@@ -253,14 +250,15 @@ fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>());
 }
 
-
 async fn handle_message(
-    current_state: Arc<RwLock<Box<dyn Screen>>>,
+    current_state: DisplayState,
+    app_state: &SafeState,
     message: RidgelineMessage,
-    write_port: &mut Box<dyn SerialPort>
+    write_port: &mut Box<dyn SerialPort>,
 ) {
     let mut screen = current_state.write().await;
-    let new_screen = (*screen).handle_message(message);
+    let app_state = app_state.read().await;
+    let new_screen = (*screen).handle_message(&app_state, message);
     if let Some(new_screen) = new_screen {
         if new_screen.as_any().type_id() != (*screen).as_any().type_id() {
             // Clear the screen
@@ -278,13 +276,15 @@ async fn handle_message(
 }
 
 async fn handle_button(
-    current_state: Arc<RwLock<Box<dyn Screen>>>,
+    display_state: DisplayState,
+    app_state: &SafeState,
     button_pressed: u8,
-    port: &mut Box<dyn SerialPort>
+    port: &mut Box<dyn SerialPort>,
 ) {
     println!("Button pressed: {:?}", button_pressed);
-    let mut screen = current_state.write().await;
-    let new_screen = (*screen).handle_button(button_pressed);
+    let mut screen = display_state.write().await;
+    let app_state = app_state.read().await;
+    let new_screen = (*screen).handle_button(&app_state, button_pressed);
     if let Some(new_screen) = new_screen {
         println!("New screen has been acquired via button!!");
         // print_type_of(&new_screen.as_any());
@@ -292,8 +292,7 @@ async fn handle_button(
         if new_screen.as_any().type_id() != (*screen).as_any().type_id() {
             let _ = clear_screen(port);
             new_screen.draw_screen(port);
-        }
-        else {
+        } else {
             new_screen.redraw_screen(port);
         }
         *screen = new_screen;
@@ -315,8 +314,13 @@ fn connect() -> Box<dyn SerialPort> {
         .expect("Could not open serial port")
 }
 
-pub fn start(mut lcd_rx: Receiver<RidgelineMessage>) -> (JoinHandle<()>, JoinHandle<()>) {
-    let mut state: Arc<RwLock<Box<dyn Screen>>> = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
+type DisplayState = Arc<RwLock<Box<dyn Screen>>>;
+
+pub async fn start(
+    mut lcd_rx: Receiver<RidgelineMessage>,
+    shared_state: SafeState,
+) -> (JoinHandle<()>, JoinHandle<()>) {
+    let mut display_state: DisplayState = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
 
     let mut port = connect();
     // port is safe to clone, but ideally have a read/write clone
@@ -325,19 +329,16 @@ pub fn start(mut lcd_rx: Receiver<RidgelineMessage>) -> (JoinHandle<()>, JoinHan
     // This task is responsible for listening to state changes sent to us from
     // the event bus and updating the screens, as appropriate.
     let mut write_port = port.try_clone().expect("Could not create write port");
-    let write_state = state.clone();
+    let write_state = display_state.clone();
+    let write_shared_state = shared_state.clone();
     let lcd_writer = task::spawn(async move {
-        // Set up our display
-        // reset_screen(&mut write_port).expect("Could not reset screen");
-        set_brightness(&mut write_port, 0.5).expect("Could not set brightness"); // Set brightness to 50%
-
         // Now listen for any events that we need in order to process writes to our screen
         loop {
             select! {
                 message = lcd_rx.recv() => {
                     match message {
                         Ok(message) => {
-                            handle_message(write_state.clone(), message, &mut write_port).await;
+                            handle_message(write_state.clone(), &write_shared_state, message, &mut write_port).await;
                         }
                         Err(e) => {
                             println!("{:?}", e);
@@ -357,12 +358,14 @@ pub fn start(mut lcd_rx: Receiver<RidgelineMessage>) -> (JoinHandle<()>, JoinHan
 
     // This task is responsible for reading from the USB serial and responding to
     // button presses as needed.
-    let read_state = state.clone();
+    let read_state = display_state.clone();
     // let tokio_handle = Handle::current();
     let mut read_port = port.try_clone().expect("Could not create read port");
     let lcd_reader = task::spawn(async move {
         loop {
-            let mut loop_port = read_port.try_clone().expect("Could not create response port");
+            let mut loop_port = read_port
+                .try_clone()
+                .expect("Could not create response port");
             // let mut response_port = read_port.try_clone().expect("Could not create response port");
             select! {
                 result = task::spawn_blocking(move || {
@@ -375,7 +378,7 @@ pub fn start(mut lcd_rx: Receiver<RidgelineMessage>) -> (JoinHandle<()>, JoinHan
                 }) => {
                     match result {
                         Ok(Ok(button_pressed)) => {
-                            handle_button(read_state.clone(), button_pressed, &mut read_port).await;
+                            handle_button(read_state.clone(), &shared_state, button_pressed, &mut read_port).await;
                         },
                         Ok(Err(ref e)) if e.kind() == io::ErrorKind::TimedOut => {
                             continue;
@@ -394,20 +397,18 @@ pub fn start(mut lcd_rx: Receiver<RidgelineMessage>) -> (JoinHandle<()>, JoinHan
     });
 
     // Now that everything is started, send the first screen
-    tokio::spawn(async move {
-        // Initialize the horizontal bar graphs (page 22 of the LCD manual)
-        port.write_all(&[254, 104]).unwrap();
+    set_brightness(&mut port, 0.5).expect("Could not set brightness"); // Set brightness to 50%
+                                                                       // Initialize the horizontal bar graphs (page 22 of the LCD manual)
+    port.write_all(&[254, 104]).unwrap();
 
-        // Clear the screen and then draw the first screen *we* want to show
-        let first_screen = state.read().await;
-        println!("Writing the first screen...");
-        clear_screen(&mut port).expect("Could not clear the screen");
-        first_screen.draw_screen(&mut port);
-    });
+    // Clear the screen and then draw the first screen *we* want to show
+    let first_screen = display_state.read().await;
+    println!("Writing the first screen...");
+    clear_screen(&mut port).expect("Could not clear the screen");
+    first_screen.draw_screen(&mut port);
 
     (lcd_reader, lcd_writer)
 }
-
 
 /******************************************
  Utility functions
@@ -489,17 +490,11 @@ mod tests {
 
     #[test]
     fn test_screen_equality() {
-        let screen_one = MenuScreen {
-            current: 1
-        };
-        let screen_two = MenuScreen {
-            current: 1,
-        };
+        let screen_one = MenuScreen { current: 1 };
+        let screen_two = MenuScreen { current: 1 };
         assert_eq!(screen_one == screen_two, true);
 
-        let screen_three = MenuScreen {
-            current: 3
-        };
+        let screen_three = MenuScreen { current: 3 };
         assert_eq!(screen_one == screen_three, false);
     }
 }
