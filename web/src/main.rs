@@ -3,9 +3,9 @@ extern crate rocket;
 mod lcd_display;
 mod web_server;
 
-use core::state::UranusState;
-use core::wifi::WiFiObserver;
-use core::RidgelineMessage;
+use alas_lib::state::UranusState;
+use alas_lib::wifi::WiFiObserver;
+use alas_lib::RidgelineMessage;
 use rocket::serde::{Deserialize, Serialize};
 use serialport::SerialPort;
 use std::io::Write;
@@ -51,7 +51,7 @@ async fn main() {
     // fake_ticker(event_bus.clone());
     println!("Ready to start some more business! Like the web server!");
 
-    let audio = core::audio::start(event_bus.clone());
+    let audio = alas_lib::audio::start(event_bus.clone());
 
     signal::ctrl_c().await.expect("failed to listen for event");
     let _ = event_bus.send(RidgelineMessage::Exit);

@@ -1,5 +1,5 @@
-use core::do_things;
-use core::wifi::{WiFiNetwork, WiFiObserver};
+use alas_lib::do_things;
+use alas_lib::wifi::{WiFiNetwork, WiFiObserver};
 use rocket::fs::{FileServer, NamedFile};
 use rocket::http::Status;
 use rocket::response::stream::{Event, EventStream};
@@ -35,7 +35,7 @@ struct WiFiNetworks {
 }
 #[get("/wifi/available")]
 async fn available_wifi() -> Json<WiFiNetworks> {
-    let wifi_networks = core::wifi::get_wifi_networks().await;
+    let wifi_networks = alas_lib::wifi::get_wifi_networks().await;
     Json(WiFiNetworks {
         networks: wifi_networks,
     })
@@ -59,7 +59,7 @@ struct WiFiConnectRequest {
 #[post("/wifi/connect", format = "json", data = "<data>")]
 async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
     // dbg!(&data);
-    core::wifi::join_wifi(data.ap.clone(), data.password.clone()).await;
+    alas_lib::wifi::join_wifi(data.ap.clone(), data.password.clone()).await;
     Status::Created
 }
 

@@ -1,0 +1,25 @@
+use crate::UnsafeState;
+use alas_lib::RidgelineMessage;
+use serialport::SerialPort;
+use std::any::Any;
+
+pub trait Screen: Send + Sync + Any {
+    // Draw the screen from scratch
+    fn draw_screen(&self, port: &mut Box<dyn SerialPort>);
+
+    // Update only the parts of the screen that have changed
+    // TODO: do we need old state?
+    fn redraw_screen(&self, port: &mut Box<dyn SerialPort>);
+
+    // Handle a button being pressed
+    fn handle_button(&self, app_state: &UnsafeState, button: u8) -> Option<Box<dyn Screen>>;
+
+    // Handle an incoming message from the bus
+    fn handle_message(
+        &self,
+        app_state: &UnsafeState,
+        message: RidgelineMessage,
+    ) -> Option<Box<dyn Screen>>;
+
+    fn as_any(&self) -> &dyn Any;
+}
