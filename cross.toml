@@ -10,5 +10,6 @@ pre-build = [
         libdbus-1-dev:$CROSS_DEB_ARCH \
         portaudio19-dev:$CROSS_DEB_ARCH \
         libudev-dev:$CROSS_DEB_ARCH \
+        libshout3-dev:$CROSS_DEB_ARCH
     """
 ]

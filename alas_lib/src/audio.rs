@@ -1,8 +1,15 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::Sample;
+use cpal::{Sample, SupportedStreamConfig};
+use mp3lame_encoder::{DualPcm, Encoder, FlushNoGap};
+use shout::ShoutConn;
+use std::fs::File;
+use std::io::Write;
+use std::sync::{Arc, RwLock};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::runtime::Handle;
 use tokio::sync::broadcast::Sender;
 
+use crate::config::AlasConfig;
 use crate::RidgelineMessage;
 use crate::RidgelineMessage::VolumeChange;
 use tokio::task::JoinHandle;
@@ -10,9 +17,14 @@ use tokio::{signal, task};
 
 struct AudioState {
     audio_present: bool,
-    // audio_last_seen,  # for tracking when to go "off-air"
+    audio_last_seen: SystemTime, // for tracking when to go "off-air"
+
     is_streaming: bool,
     is_recording: bool,
+
+    mp3_encoder: Encoder,
+    icecast_connection: ShoutConn,
+    recording_file: File,
 }
 
 /// Starts the thread for handling audio.
@@ -21,53 +33,63 @@ struct AudioState {
 /// if there is currently audio flowing through the system, how long it has been
 /// silent, etc. It will also start and stop the Icecast thread based on these
 /// times.
-pub fn start(bus: Sender<RidgelineMessage>) -> JoinHandle<Result<(), ()>> {
+pub fn start(bus: Sender<RidgelineMessage>, alas_config: AlasConfig) -> JoinHandle<Result<(), ()>> {
     let handler = Handle::current();
     task::spawn_blocking(move || {
         let host = cpal::default_host();
         let device = host.default_input_device().expect("No default sound card");
-        let config = device.default_input_config().unwrap();
+        let audio_device_config = device.default_input_config().unwrap();
 
         let err_fn = move |err| {
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        println!("Default sample rate: {:?}", config.sample_rate());
-        println!("Default sample format: {:?}", config.sample_format());
+        println!(
+            "Default sample rate: {:?}",
+            audio_device_config.sample_rate()
+        );
+        println!(
+            "Default sample format: {:?}",
+            audio_device_config.sample_format()
+        );
         println!(
             "Default sample size: {:?}",
-            config.sample_format().sample_size()
+            audio_device_config.sample_format().sample_size()
         );
 
-        let stream = match config.sample_format() {
-            cpal::SampleFormat::I8 => device
-                .build_input_stream(
-                    &config.into(),
-                    move |data, _: &_| handle_samples::<i8, i8>(data, &bus),
-                    err_fn,
-                    None,
-                )
-                .unwrap(),
-            cpal::SampleFormat::I16 => device
-                .build_input_stream(
-                    &config.into(),
-                    move |data, _: &_| handle_samples::<i16, i16>(data, &bus),
-                    err_fn,
-                    None,
-                )
-                .unwrap(),
-            cpal::SampleFormat::I32 => device
-                .build_input_stream(
-                    &config.into(),
-                    move |data, _: &_| handle_samples::<i32, i32>(data, &bus),
-                    err_fn,
-                    None,
-                )
-                .unwrap(),
+        // Set up the MP3 encoder.
+        let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
+        mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
+        mp3_encoder
+            .set_sample_rate(44_100) // TODO(config)
+            .expect("set sample rate");
+        mp3_encoder
+            .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
+            .expect("set brate");
+        let mut mp3_encoder = mp3_encoder.build().expect("Could not init LAME");
+
+        // TODO(config)
+        let mut output_file = File::create("results.mp3").expect("to open file");
+
+        let conn = connect_to_icecast(alas_config.clone());
+
+        let mut state = AudioState {
+            audio_present: false,
+            audio_last_seen: UNIX_EPOCH,
+            is_streaming: false,
+            is_recording: false,
+            mp3_encoder,
+            icecast_connection: conn,
+            recording_file: output_file,
+        };
+
+        let stream = match audio_device_config.sample_format() {
+            // TODO: HiFiBerry supports F32 by default, so that's what
+            // we have implemented. Others could be implemented later.
             cpal::SampleFormat::F32 => device
                 .build_input_stream(
-                    &config.into(),
-                    move |data, _: &_| handle_samples::<f32, f32>(data, &bus),
+                    &audio_device_config.into(),
+                    move |data, _: &_| handle_samples::<f32>(data, &bus, &mut state),
                     err_fn,
                     None,
                 )
@@ -89,14 +111,131 @@ pub fn start(bus: Sender<RidgelineMessage>) -> JoinHandle<Result<(), ()>> {
     })
 }
 
-fn handle_samples<T, U>(input: &[T], bus: &Sender<RidgelineMessage>)
-where
+fn connect_to_icecast(alas_config: AlasConfig) -> ShoutConn {
+    shout::ShoutConnBuilder::new()
+        // TODO(!): pull from configuration values
+        .host(alas_config.icecast.hostname)
+        .port(alas_config.icecast.port)
+        .user(String::from("source"))
+        .password(alas_config.icecast.password)
+        .mount(alas_config.icecast.mount)
+        .protocol(shout::ShoutProtocol::HTTP)
+        .format(shout::ShoutFormat::MP3)
+        .build()
+        .expect("to have icecast")
+}
+
+fn float_to_i16(sample: f32) -> i16 {
+    // First clamp to the valid normalized range just in case
+    let clamped = sample.clamp(-1.0, 1.0);
+    // Map from [-1.0, 1.0] to [-32768, 32767] (i16 range)
+    // Multiplying by i16::MAX (32767) handles positive values correctly,
+    // and negative values are safely converted as well.
+    (clamped * i16::MAX as f32) as i16
+}
+
+fn handle_samples<T>(
+    input: &[T],
+    bus: &Sender<RidgelineMessage>,
+    state: &mut AudioState,
+    // mp3_encoder: &mut Encoder,
+    // output_file: &mut File,
+    // conn: &ShoutConn,
+) where
     T: Sample,
-    U: Sample,
 {
-    let (left, right) = calculate_rms_levels(&input, 2);
+    let channels = 2;
+    let (left, right) = calculate_rms_levels(&input, channels);
     bus.send(VolumeChange { left, right })
         .expect("Could not update volume");
+
+    if left > -50.0 || right > -50.0 {
+        // TODO(config)
+        if !state.audio_present {
+            println!("Audio is now available!");
+        }
+        state.audio_present = true;
+        state.audio_last_seen = SystemTime::now();
+        state.is_streaming = true;
+        state.is_recording = true;
+    } else {
+        if state.audio_present {
+            println!("Audio has disappeared!");
+        }
+        state.audio_present = false;
+    }
+
+    // Before we do anything else, verify that we should still be recording/streaming
+    // TODO(configure): 15 seconds needs to be configured (and usually much longer)
+    if !state.audio_present
+        && SystemTime::now()
+            .duration_since(state.audio_last_seen)
+            .unwrap()
+            .as_secs()
+            > 15
+    {
+        state.is_recording = false;
+        state.is_streaming = false;
+    }
+
+    if !state.is_recording && !state.is_streaming {
+        return;
+    }
+
+    let mut left_channel = Vec::new();
+    let mut right_channel = Vec::new();
+
+    for (i, sample) in input.iter().enumerate() {
+        if i % 2 == 0 {
+            left_channel.push(float_to_i16(sample.to_float_sample().to_sample::<f32>()));
+        } else {
+            right_channel.push(float_to_i16(sample.to_float_sample().to_sample::<f32>()));
+        }
+    }
+    let data = DualPcm {
+        left: &*left_channel,
+        right: &*right_channel,
+    };
+
+    let mut mp3_buffer = Vec::new();
+    mp3_buffer.reserve(mp3lame_encoder::max_required_buffer_size(data.left.len()));
+    let encoded_size = state
+        .mp3_encoder
+        .encode(data, mp3_buffer.spare_capacity_mut())
+        .expect("Encode");
+    // unsafe {
+    //     mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
+    // }
+    mp3_buffer.resize(mp3_buffer.len() + encoded_size, 0);
+
+    let encoded_size = state
+        .mp3_encoder
+        .flush::<FlushNoGap>(mp3_buffer.spare_capacity_mut())
+        .expect("to flush");
+    /* unsafe {
+    //     mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
+    / }*/
+    mp3_buffer.resize(mp3_buffer.len() + encoded_size, 0);
+
+    // TODO: need to separate the mp3 output from the connection output
+    // so that we can record and stream at different speeds.
+    if state.is_recording {
+        match state.recording_file.write_all(&mp3_buffer) {
+            Ok(_) => (),
+            Err(e) => println!("Could not write output file: {}", e),
+        }
+    }
+    if state.is_streaming {
+        match state.icecast_connection.send(&mp3_buffer) {
+            Ok(_) => {
+                // conn.sync();
+            }
+            Err(e) => {
+                // attempt to reconnect the stream.
+                println!("Could not stream: {:?}", e)
+            }
+        }
+    }
 }
 
 fn calculate_rms_levels<T>(data: &[T], channels: usize) -> (f32, f32)
@@ -175,3 +314,36 @@ mod test {
         assert!(quiet_rms < loud_rms);
     }
 }
+
+/*
+           cpal::SampleFormat::I8 => device
+               .build_input_stream(
+                   &config.into(),
+                   move |data, _: &_| {
+                       handle_samples::<i8>(data, &bus, &mut mp3_encoder, &mut output_file, &conn)
+                   },
+                   err_fn,
+                   None,
+               )
+               .unwrap(),
+           cpal::SampleFormat::I16 => device
+               .build_input_stream(
+                   &config.into(),
+                   move |data, _: &_| {
+                       handle_samples::<i16>(data, &bus, &mut mp3_encoder, &mut output_file, &conn)
+                   },
+                   err_fn,
+                   None,
+               )
+               .unwrap(),
+           cpal::SampleFormat::I32 => device
+               .build_input_stream(
+                   &config.into(),
+                   move |data, _: &_| {
+                       handle_samples::<i32>(data, &bus, &mut mp3_encoder, &mut output_file, &conn)
+                   },
+                   err_fn,
+                   None,
+               )
+               .unwrap(),
+*/

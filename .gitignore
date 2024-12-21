@@ -2,4 +2,6 @@
 target/
 out.xml
 .DS_Store
-
+*.mp3
+*.wav
+.env

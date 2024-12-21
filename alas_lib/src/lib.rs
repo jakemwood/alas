@@ -1,5 +1,5 @@
 pub mod audio;
-mod config;
+pub mod config;
 mod modem_manager;
 mod network_manager;
 pub mod state;

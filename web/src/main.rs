@@ -1,12 +1,10 @@
-#[macro_use]
-extern crate rocket;
 mod lcd_display;
 mod web_server;
 
+use alas_lib::config::load_config;
 use alas_lib::state::UranusState;
 use alas_lib::wifi::WiFiObserver;
 use alas_lib::RidgelineMessage;
-use rocket::serde::{Deserialize, Serialize};
 use serialport::SerialPort;
 use std::io::Write;
 use std::sync::Arc;
@@ -37,6 +35,7 @@ type SafeState = Arc<RwLock<UranusState>>;
 #[tokio::main]
 async fn main() {
     let state = Arc::new(RwLock::new(UranusState::new()));
+    let config = load_config();
 
     let tokio_handle = Handle::current();
 
@@ -51,7 +50,7 @@ async fn main() {
     // fake_ticker(event_bus.clone());
     println!("Ready to start some more business! Like the web server!");
 
-    let audio = alas_lib::audio::start(event_bus.clone());
+    let audio = alas_lib::audio::start(event_bus.clone(), config.clone());
 
     signal::ctrl_c().await.expect("failed to listen for event");
     let _ = event_bus.send(RidgelineMessage::Exit);
