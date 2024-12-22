@@ -11,6 +11,7 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::{select, signal, task};
+use crate::lcd_display::matrix_orbital::clear_screen;
 
 mod home_screen;
 mod matrix_orbital;
@@ -124,6 +125,8 @@ pub async fn start(
         }
 
         println!("End of LCD Writer loop reached!");
+        clear_screen(&mut write_port).unwrap();
+        write_port.write_all("Software shutdown...".as_bytes()).unwrap();
     });
 
     // This task is responsible for reading from the USB serial and responding to
