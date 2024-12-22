@@ -57,7 +57,6 @@ async fn handle_button(
     let app_state = app_state.read().await;
     let new_screen = (*screen).handle_button(&app_state, button_pressed);
     if let Some(new_screen) = new_screen {
-        println!("New screen has been acquired via button!!");
         // print_type_of(&new_screen.as_any());
         // print_type_of(&(*screen).as_any());
         if new_screen.as_any().type_id() != (*screen).as_any().type_id() {

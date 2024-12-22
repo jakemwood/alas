@@ -22,9 +22,9 @@ struct AudioState {
     is_streaming: bool,
     is_recording: bool,
 
-    mp3_encoder: Encoder,
-    icecast_connection: ShoutConn,
-    recording_file: File,
+    // mp3_encoder: Encoder,
+    // icecast_connection: ShoutConn,
+    // recording_file: File,
 }
 
 /// Starts the thread for handling audio.
@@ -71,16 +71,23 @@ pub fn start(bus: Sender<RidgelineMessage>, alas_config: AlasConfig) -> JoinHand
         // TODO(config)
         let mut output_file = File::create("results.mp3").expect("to open file");
 
-        let conn = connect_to_icecast(alas_config.clone());
+        let conn = shout::ShoutConnBuilder::new()
+            // TODO(!): pull from configuration values
+            .host(alas_config.icecast.hostname)
+            .port(alas_config.icecast.port)
+            .user(String::from("source"))
+            .password(alas_config.icecast.password)
+            .mount(alas_config.icecast.mount)
+            .protocol(shout::ShoutProtocol::HTTP)
+            .format(shout::ShoutFormat::MP3)
+            .build()
+            .expect("to have icecast");
 
         let mut state = AudioState {
             audio_present: false,
             audio_last_seen: UNIX_EPOCH,
             is_streaming: false,
             is_recording: false,
-            mp3_encoder,
-            icecast_connection: conn,
-            recording_file: output_file,
         };
 
         let stream = match audio_device_config.sample_format() {
@@ -89,7 +96,7 @@ pub fn start(bus: Sender<RidgelineMessage>, alas_config: AlasConfig) -> JoinHand
             cpal::SampleFormat::F32 => device
                 .build_input_stream(
                     &audio_device_config.into(),
-                    move |data, _: &_| handle_samples::<f32>(data, &bus, &mut state),
+                    move |data, _: &_| handle_samples::<f32>(data, &bus, &mut state, &mut mp3_encoder, &mut output_file, &conn),
                     err_fn,
                     None,
                 )
@@ -111,19 +118,10 @@ pub fn start(bus: Sender<RidgelineMessage>, alas_config: AlasConfig) -> JoinHand
     })
 }
 
-fn connect_to_icecast(alas_config: AlasConfig) -> ShoutConn {
-    shout::ShoutConnBuilder::new()
-        // TODO(!): pull from configuration values
-        .host(alas_config.icecast.hostname)
-        .port(alas_config.icecast.port)
-        .user(String::from("source"))
-        .password(alas_config.icecast.password)
-        .mount(alas_config.icecast.mount)
-        .protocol(shout::ShoutProtocol::HTTP)
-        .format(shout::ShoutFormat::MP3)
-        .build()
-        .expect("to have icecast")
-}
+// fn connect_to_icecast(alas_config: AlasConfig) -> ShoutConn {
+//     println!("Connecting to {}", alas_config.icecast.hostname);
+//
+// }
 
 fn float_to_i16(sample: f32) -> i16 {
     // First clamp to the valid normalized range just in case
@@ -138,9 +136,9 @@ fn handle_samples<T>(
     input: &[T],
     bus: &Sender<RidgelineMessage>,
     state: &mut AudioState,
-    // mp3_encoder: &mut Encoder,
-    // output_file: &mut File,
-    // conn: &ShoutConn,
+    mp3_encoder: &mut Encoder,
+    recording_file: &mut File,
+    icecast_connection: &ShoutConn,
 ) where
     T: Sample,
 {
@@ -149,7 +147,7 @@ fn handle_samples<T>(
     bus.send(VolumeChange { left, right })
         .expect("Could not update volume");
 
-    if left > -50.0 || right > -50.0 {
+    if left > -55.0 || right > -55.0 {
         // TODO(config)
         if !state.audio_present {
             println!("Audio is now available!");
@@ -174,6 +172,9 @@ fn handle_samples<T>(
             .as_secs()
             > 15
     {
+        if state.is_recording {
+            println!("No longer recording!");
+        }
         state.is_recording = false;
         state.is_streaming = false;
     }
@@ -199,40 +200,38 @@ fn handle_samples<T>(
 
     let mut mp3_buffer = Vec::new();
     mp3_buffer.reserve(mp3lame_encoder::max_required_buffer_size(data.left.len()));
-    let encoded_size = state
-        .mp3_encoder
+    let encoded_size = mp3_encoder
         .encode(data, mp3_buffer.spare_capacity_mut())
         .expect("Encode");
-    // unsafe {
-    //     mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
-    // }
-    mp3_buffer.resize(mp3_buffer.len() + encoded_size, 0);
+    // TODO: surely there is a way to do this safely without offending mp3s?
+    unsafe {
+        mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
+    }
+    // mp3_buffer.resize(mp3_buffer.len() + encoded_size, 0);
 
-    let encoded_size = state
-        .mp3_encoder
+    let encoded_size = mp3_encoder
         .flush::<FlushNoGap>(mp3_buffer.spare_capacity_mut())
         .expect("to flush");
-    /* unsafe {
-    //     mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
-    / }*/
-    mp3_buffer.resize(mp3_buffer.len() + encoded_size, 0);
+    unsafe {
+         mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
+    }
+    // mp3_buffer.resize(mp3_buffer.len() + encoded_size, 0);
 
     // TODO: need to separate the mp3 output from the connection output
     // so that we can record and stream at different speeds.
     if state.is_recording {
-        match state.recording_file.write_all(&mp3_buffer) {
-            Ok(_) => (),
-            Err(e) => println!("Could not write output file: {}", e),
+        match recording_file.write_all(&mp3_buffer) {
+            Ok(_) => {},
+            Err(err) => {
+                eprintln!("Error writing to file: {:?}", err);
+            }
         }
     }
     if state.is_streaming {
-        match state.icecast_connection.send(&mp3_buffer) {
-            Ok(_) => {
-                // conn.sync();
-            }
-            Err(e) => {
-                // attempt to reconnect the stream.
-                println!("Could not stream: {:?}", e)
+        match icecast_connection.send(&mp3_buffer) {
+            Ok(_) => {},
+            Err(err) => {
+                eprintln!("Error writing to Icecast: {:?}", err);
             }
         }
     }
