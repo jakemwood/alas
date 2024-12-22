@@ -10,6 +10,8 @@ uuid = {  version = "1.11.0", features = ["v4"] }
 serde = { version = "1.0.215", features = ["derive"] }
 cpal = { version = "0.15.3" }
 serde_json = "1.0.133"
+chrono = "0.4.39"
+bus = "2.4.1"
 
 # Opus encoding
 #opus = "0.3.0"
@@ -21,3 +23,4 @@ mp3lame-encoder = "0.2.1"
 
 # Icecast
 shout = "0.2.1"
+futures = "0.3.31"

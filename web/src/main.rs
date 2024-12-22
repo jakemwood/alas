@@ -58,13 +58,15 @@ async fn main() {
     // Await all of our "threads" here to clean up...
     println!("Waiting for Wi-Fi to unwrap...");
     wifi_changes.await.unwrap();
+    println!("Waiting for audio to unwrap...");
+    let _ = audio.await.unwrap();
+
+    // let shutdown = web_server::run_rocket_server(wifi_observer.clone()).await;
+    // tasks.spawn(shutdown);
+
+    // LCD should always be last to exit so that we can display all messages
     println!("Waiting for lcd rx to unwrap...");
     lcd_rx_thread.await.unwrap();
     println!("Waiting for lcd tx to unwrap...");
     lcd_tx_thread.await.unwrap();
-    println!("Waiting for audio to unwrap...");
-    audio.await.unwrap().expect("Audio panicked");
-
-    // let shutdown = web_server::run_rocket_server(wifi_observer.clone()).await;
-    // tasks.spawn(shutdown);
 }

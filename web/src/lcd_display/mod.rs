@@ -1,4 +1,6 @@
+use crate::lcd_display::matrix_orbital::clear_screen;
 use crate::SafeState;
+use alas_lib::state::UranusState;
 use alas_lib::RidgelineMessage;
 use menu_screen::MenuScreen;
 use screen::Screen;
@@ -8,10 +10,9 @@ use std::io::{self, Read, Write};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::Receiver;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockWriteGuard};
 use tokio::task::JoinHandle;
 use tokio::{select, signal, task};
-use crate::lcd_display::matrix_orbital::clear_screen;
 
 mod home_screen;
 mod matrix_orbital;
@@ -28,6 +29,31 @@ async fn handle_message(
     message: RidgelineMessage,
     write_port: &mut Box<dyn SerialPort>,
 ) {
+    // Some messages are not screen-specific. Handle those here.
+    match message {
+        RidgelineMessage::RecordingStarted => {
+            let mut state = app_state.write().await;
+            (*state).is_recording = true;
+            change_on_air_lights(&state, write_port);
+        }
+        RidgelineMessage::RecordingStopped => {
+            let mut state = app_state.write().await;
+            (*state).is_recording = false;
+            change_on_air_lights(&state, write_port);
+        }
+        RidgelineMessage::StreamingStarted => {
+            let mut state = app_state.write().await;
+            (*state).is_streaming = true;
+            change_on_air_lights(&state, write_port);
+        }
+        RidgelineMessage::StreamingStopped => {
+            let mut state = app_state.write().await;
+            (*state).is_streaming = false;
+            change_on_air_lights(&state, write_port);
+        }
+        _ => {}
+    }
+
     let mut screen = current_state.write().await;
     let app_state = app_state.read().await;
     let new_screen = (*screen).handle_message(&app_state, message);
@@ -44,6 +70,19 @@ async fn handle_message(
             new_screen.redraw_screen(write_port);
         }
         *screen = new_screen;
+    }
+}
+
+fn change_on_air_lights(state: &UranusState, write_port: &mut Box<dyn SerialPort>) {
+    if state.is_recording {
+        write_port.write_all(&[254, 87, 5]).unwrap();
+    } else {
+        write_port.write_all(&[254, 86, 5]).unwrap();
+    }
+    if state.is_streaming {
+        write_port.write_all(&[254, 87, 3]).unwrap();
+    } else {
+        write_port.write_all(&[254, 86, 3]).unwrap();
     }
 }
 
@@ -126,7 +165,9 @@ pub async fn start(
 
         println!("End of LCD Writer loop reached!");
         clear_screen(&mut write_port).unwrap();
-        write_port.write_all("Software shutdown...".as_bytes()).unwrap();
+        write_port
+            .write_all("Software shutdown...".as_bytes())
+            .unwrap();
     });
 
     // This task is responsible for reading from the USB serial and responding to

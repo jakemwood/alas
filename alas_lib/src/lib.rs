@@ -64,6 +64,10 @@ pub enum RidgelineMessage {
     NetworkStatusChange { new_state: u32 },
     Ticker { count: u32 },
     VolumeChange { left: f32, right: f32 },
+    RecordingStarted,
+    RecordingStopped,
+    StreamingStarted,
+    StreamingStopped,
 }
 
 // #[cfg(test)]
