@@ -1,2 +1,2 @@
 [workspace]
-members = ["web", "alas_lib"]
+members = ["alas", "alas_lib"]

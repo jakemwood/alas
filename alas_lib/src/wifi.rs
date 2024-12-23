@@ -3,7 +3,7 @@ use crate::network_manager::{
     AccessPointProxy, ActiveConnectionProxy, DeviceProxy, NetworkManagerProxy, StateChangedArgs,
     WiFiDeviceProxy,
 };
-use crate::RidgelineMessage;
+use crate::state::AlasMessage;
 use serde::Serialize;
 use std::collections::HashMap;
 use tokio::sync::broadcast::Sender;
@@ -203,12 +203,12 @@ pub async fn join_wifi(path: String, password: Option<String>) {
 
 /// WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
 pub struct WiFiObserver {
-    pub sender: Sender<RidgelineMessage>,
+    pub sender: Sender<AlasMessage>,
     pub state: RwLock<Option<u32>>,
 }
 
 impl WiFiObserver {
-    pub fn new(broadcast: Sender<RidgelineMessage>) -> Self {
+    pub fn new(broadcast: Sender<AlasMessage>) -> Self {
         println!("Starting WiFi server...");
         WiFiObserver {
             sender: broadcast,
@@ -233,7 +233,7 @@ impl WiFiObserver {
         tokio::spawn(async move {
             // Get the current state
             println!("Current state is {:?}", current_state);
-            match sender.send(RidgelineMessage::NetworkStatusChange {
+            match sender.send(AlasMessage::NetworkStatusChange {
                 new_state: current_state,
             }) {
                 Ok(_) => {}
@@ -253,7 +253,7 @@ impl WiFiObserver {
                     Some(msg) = state_change_stream.next() => {
                         let args: StateChangedArgs = msg.args().expect("Error parsing message");
                         dbg!(&args);
-                        let _ = sender.send(RidgelineMessage::NetworkStatusChange {
+                        let _ = sender.send(AlasMessage::NetworkStatusChange {
                             new_state: args.new_state,
                         });
                     },

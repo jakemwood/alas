@@ -9,8 +9,9 @@ use rocket::{get, launch, post, routes, Build, Error, Ignite, Rocket, Shutdown, 
 use std::io;
 use std::sync::Arc;
 use tokio::select;
-use tokio::sync::broadcast::Receiver;
+use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
+use alas_lib::state::AlasMessage;
 
 #[get("/")]
 pub async fn index() -> io::Result<NamedFile> {
@@ -90,17 +91,17 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
 //     }
 // }
 
-fn rocket(wifi_observer: Arc<WiFiObserver>) -> Rocket<Build> {
+fn rocket(bus: Sender<AlasMessage>) -> Rocket<Build> {
     rocket::build()
-        .manage(wifi_observer)
+        .manage(bus)
         .mount("/static", FileServer::from("static"))
         .mount("/", routes![index, go, available_wifi, connect_to_wifi])
         .mount("/null", routes![do_null])
 }
 
-pub async fn run_rocket_server(wifi_observer: Arc<WiFiObserver>) -> Shutdown {
-    println!("Starting web server...");
-    let rocket = rocket(wifi_observer)
+pub async fn run_rocket_server(bus: Sender<AlasMessage>) -> Shutdown {
+    println!("Starting alas server...");
+    let rocket = rocket(bus)
         .ignite()
         .await
         .expect("Could not ignite the rocket");

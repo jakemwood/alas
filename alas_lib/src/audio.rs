@@ -12,24 +12,13 @@ use tokio::runtime::Handle;
 use tokio::sync::broadcast::Sender;
 
 use crate::config::AlasConfig;
-use crate::RidgelineMessage;
-use crate::RidgelineMessage::VolumeChange;
+use crate::state::{AlasMessage, AlasState, SafeState};
+use crate::state::AlasMessage::VolumeChange;
 use bus::Bus;
 use futures::future::{join_all, JoinAll};
 use tokio::task::JoinHandle;
 use tokio::{signal, task};
-
-#[derive(Clone, PartialEq)]
-struct AudioState {
-    audio_present: bool,
-    audio_last_seen: SystemTime, // for tracking when to go "off-air"
-
-    is_streaming: bool,
-    is_recording: bool,
-    // mp3_encoder: Encoder,
-    // icecast_connection: ShoutConn,
-    // recording_file: File,
-}
+use tokio::sync::RwLock;
 
 /// Starts the thread for handling audio.
 ///
@@ -38,19 +27,13 @@ struct AudioState {
 /// silent, etc. It will also start and stop the Icecast thread based on these
 /// times.
 pub fn start(
-    bus: Sender<RidgelineMessage>,
-    alas_config: AlasConfig,
+    bus: Sender<AlasMessage>,
+    alas_state: &SafeState,
 ) -> JoinHandle<JoinAll<JoinHandle<()>>> {
     let handler = Handle::current();
+    let alas_state = alas_state.clone();
 
     task::spawn_blocking(move || {
-        // let mut state = Arc::new(RwLock::new(AudioState {
-        //     audio_present: false,
-        //     audio_last_seen: UNIX_EPOCH,
-        //     is_streaming: false,
-        //     is_recording: false,
-        // }));
-
         let mut is_streaming = false;
         let mut is_recording = false;
         let mut desire_to_broadcast = Arc::new(AtomicBool::new(false));
@@ -62,6 +45,7 @@ pub fn start(
         let mut icecast_rx = audio_bus.add_rx();
         let icecast_bus = bus.clone();
         let it_desire_to_broadcast = desire_to_broadcast.clone();
+        let it_app_state = alas_state.clone();
         let icecast = task::spawn_blocking(move || {
             // Set up the MP3 encoder.
             let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
@@ -83,7 +67,8 @@ pub fn start(
                 };
 
                 if it_desire_to_broadcast.load(Ordering::Relaxed) {
-                    let icecast_connection = connect_to_icecast(&alas_config);
+                    let config = &it_app_state.blocking_read().config;
+                    let icecast_connection = connect_to_icecast(config);
 
                     while it_desire_to_broadcast.load(Ordering::Relaxed) {
                         let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
@@ -93,13 +78,13 @@ pub fn start(
                                 if !&is_streaming {
                                     println!("Acquiring state lock 89");
                                     is_streaming = true;
-                                    let _ = &icecast_bus.send(RidgelineMessage::StreamingStarted);
+                                    let _ = &icecast_bus.send(AlasMessage::StreamingStarted);
                                 }
                             }
                             Err(err) => {
                                 eprintln!("Error writing to Icecast: {:?} (line 102)", err);
                                 is_streaming = false;
-                                let _ = &icecast_bus.send(RidgelineMessage::StreamingStopped);
+                                let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
                             }
                         }
 
@@ -112,13 +97,13 @@ pub fn start(
                     }
 
                     is_streaming = false;
-                    let _ = &icecast_bus.send(RidgelineMessage::StreamingStopped);
+                    let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
                 }
             }
 
             println!("Acquiring state lock 124");
             is_streaming = false;
-            let _ = &icecast_bus.send(RidgelineMessage::StreamingStopped);
+            let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
             println!("Closed Icecast streaming thread");
         });
 
@@ -157,13 +142,13 @@ pub fn start(
                                 if !&is_recording {
                                     is_recording = true;
                                     // Send message to bus that we are recording
-                                    &file_bus.send(RidgelineMessage::RecordingStarted).unwrap();
+                                    &file_bus.send(AlasMessage::RecordingStarted).unwrap();
                                 }
                             }
                             Err(err) => {
                                 eprintln!("Error writing to file: {:?} 174", err);
                                 is_recording = false;
-                                &file_bus.send(RidgelineMessage::RecordingStopped).unwrap();
+                                &file_bus.send(AlasMessage::RecordingStopped).unwrap();
                             }
                         }
 
@@ -176,13 +161,13 @@ pub fn start(
                     }
 
                     is_recording = false;
-                    let _ = &file_bus.send(RidgelineMessage::RecordingStopped);
+                    let _ = &file_bus.send(AlasMessage::RecordingStopped);
                 }
             }
 
             println!("Acquiring state lock 198");
             is_recording = false;
-            let _ = &file_bus.send(RidgelineMessage::RecordingStopped);
+            let _ = &file_bus.send(AlasMessage::RecordingStopped);
             println!("Exiting file write thread");
         });
 
@@ -316,7 +301,7 @@ fn float_to_i16(sample: f32) -> i16 {
 
 fn handle_samples<T>(
     input: &[T],
-    bus: &Sender<RidgelineMessage>,
+    bus: &Sender<AlasMessage>,
     desire_to_broadcast: &AtomicBool,
     audio_last_seen: &mut SystemTime,
     sender: &mut Bus<Vec<T>>,
@@ -338,7 +323,7 @@ fn handle_samples<T>(
         *audio_last_seen = SystemTime::now();
     }
     // Before we do anything else, verify that we should still be recording/streaming
-    // TODO(configure): 15 seconds needs to be configured (and usually much longer)
+    // TODO(config): 15 seconds needs to be configured (and usually much longer)
     else if SystemTime::now()
         .duration_since(*audio_last_seen)
         .unwrap()

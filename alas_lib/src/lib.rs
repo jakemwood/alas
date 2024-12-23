@@ -58,18 +58,6 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[derive(Debug, Clone)]
-pub enum RidgelineMessage {
-    Exit,
-    NetworkStatusChange { new_state: u32 },
-    Ticker { count: u32 },
-    VolumeChange { left: f32, right: f32 },
-    RecordingStarted,
-    RecordingStopped,
-    StreamingStarted,
-    StreamingStopped,
-}
-
 // #[cfg(test)]
 // mod tests {
 //     use super::*;

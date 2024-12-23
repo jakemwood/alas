@@ -2,8 +2,8 @@ use crate::lcd_display::matrix_orbital;
 use crate::lcd_display::matrix_orbital::TOP_LEFT_BUTTON;
 use crate::lcd_display::menu_screen::MenuScreen;
 use crate::lcd_display::screen::Screen;
-use crate::UnsafeState;
-use alas_lib::RidgelineMessage;
+use alas_lib::state::UnsafeState;
+use alas_lib::state::AlasMessage;
 use serialport::SerialPort;
 use std::any::Any;
 use std::io::Write;
@@ -65,10 +65,10 @@ impl Screen for HomeScreen {
     fn handle_message(
         &self,
         _: &UnsafeState,
-        message: RidgelineMessage,
+        message: AlasMessage,
     ) -> Option<Box<dyn Screen>> {
         match message {
-            RidgelineMessage::VolumeChange {
+            AlasMessage::VolumeChange {
                 left: left_db,
                 right: right_db,
             } => {

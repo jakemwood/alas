@@ -4,8 +4,8 @@ use crate::lcd_display::matrix_orbital::{
     BOTTOM_LEFT_BUTTON, CENTER_BUTTON, DOWN_BUTTON, TOP_LEFT_BUTTON, UP_BUTTON,
 };
 use crate::lcd_display::screen::Screen;
-use crate::UnsafeState;
-use alas_lib::RidgelineMessage;
+use alas_lib::state::UnsafeState;
+use alas_lib::state::AlasMessage;
 use serialport::SerialPort;
 use std::any::Any;
 use std::cmp::{max, min};
@@ -63,7 +63,7 @@ impl Screen for MenuScreen {
         }
     }
 
-    fn handle_message(&self, _: &UnsafeState, _: RidgelineMessage) -> Option<Box<dyn Screen>> {
+    fn handle_message(&self, _: &UnsafeState, _: AlasMessage) -> Option<Box<dyn Screen>> {
         // Do nothing!
         None
     }

@@ -1,7 +1,7 @@
 use crate::lcd_display::matrix_orbital::clear_screen;
-use crate::SafeState;
-use alas_lib::state::UranusState;
-use alas_lib::RidgelineMessage;
+use alas_lib::state::SafeState;
+use alas_lib::state::AlasState;
+use alas_lib::state::AlasMessage;
 use menu_screen::MenuScreen;
 use screen::Screen;
 use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
@@ -26,33 +26,10 @@ fn print_type_of<T>(_: &T) {
 async fn handle_message(
     current_state: DisplayState,
     app_state: &SafeState,
-    message: RidgelineMessage,
+    message: AlasMessage,
     write_port: &mut Box<dyn SerialPort>,
 ) {
-    // Some messages are not screen-specific. Handle those here.
-    match message {
-        RidgelineMessage::RecordingStarted => {
-            let mut state = app_state.write().await;
-            (*state).is_recording = true;
-            change_on_air_lights(&state, write_port);
-        }
-        RidgelineMessage::RecordingStopped => {
-            let mut state = app_state.write().await;
-            (*state).is_recording = false;
-            change_on_air_lights(&state, write_port);
-        }
-        RidgelineMessage::StreamingStarted => {
-            let mut state = app_state.write().await;
-            (*state).is_streaming = true;
-            change_on_air_lights(&state, write_port);
-        }
-        RidgelineMessage::StreamingStopped => {
-            let mut state = app_state.write().await;
-            (*state).is_streaming = false;
-            change_on_air_lights(&state, write_port);
-        }
-        _ => {}
-    }
+
 
     let mut screen = current_state.write().await;
     let app_state = app_state.read().await;
@@ -73,7 +50,7 @@ async fn handle_message(
     }
 }
 
-fn change_on_air_lights(state: &UranusState, write_port: &mut Box<dyn SerialPort>) {
+fn change_on_air_lights(state: &AlasState, write_port: &mut Box<dyn SerialPort>) {
     if state.is_recording {
         write_port.write_all(&[254, 87, 5]).unwrap();
     } else {
@@ -127,8 +104,8 @@ fn connect() -> Box<dyn SerialPort> {
 type DisplayState = Arc<RwLock<Box<dyn Screen>>>;
 
 pub async fn start(
-    mut lcd_rx: Receiver<RidgelineMessage>,
-    shared_state: SafeState,
+    mut lcd_rx: Receiver<AlasMessage>,
+    shared_state: &SafeState,
 ) -> (JoinHandle<()>, JoinHandle<()>) {
     let mut display_state: DisplayState = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
 
@@ -173,7 +150,7 @@ pub async fn start(
     // This task is responsible for reading from the USB serial and responding to
     // button presses as needed.
     let read_state = display_state.clone();
-    // let tokio_handle = Handle::current();
+    let read_shared_state = shared_state.clone();
     let mut read_port = port.try_clone().expect("Could not create read port");
     let lcd_reader = task::spawn(async move {
         loop {
@@ -192,7 +169,7 @@ pub async fn start(
                 }) => {
                     match result {
                         Ok(Ok(button_pressed)) => {
-                            handle_button(read_state.clone(), &shared_state, button_pressed, &mut read_port).await;
+                            handle_button(read_state.clone(), &read_shared_state, button_pressed, &mut read_port).await;
                         },
                         Ok(Err(ref e)) if e.kind() == io::ErrorKind::TimedOut => {
                             continue;
