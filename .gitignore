@@ -5,3 +5,4 @@ out.xml
 *.mp3
 *.wav
 .env
+.idea
