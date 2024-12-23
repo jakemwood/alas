@@ -12,7 +12,7 @@ use tokio::task::JoinHandle;
 use tokio::{select, signal};
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
-use zbus::zvariant::{OwnedObjectPath, Value};
+use zbus::zvariant::{ObjectPath, OwnedObjectPath, Value};
 use zbus::Connection;
 
 /// Find the device path that is responsible for Wi-Fi.
@@ -85,6 +85,40 @@ async fn load_access_points(
         });
     }
     results
+}
+
+/// Create a Wi-Fi hotspot
+async fn create_wifi_hotspot(conn: &Connection) {
+    let mut connection: HashMap<&str, Value> = HashMap::new();
+    connection.insert("type", "802-11-wireless".into());
+    connection.insert("uuid", Value::from(Uuid::new_v4().to_string())); // Generate a unique UUID
+    connection.insert("id", "Alas Config".into());
+
+    let mut wireless: HashMap<&str, Value> = HashMap::new();
+    wireless.insert("ssid", "Alas Config".as_bytes().into());
+    wireless.insert("mode", "ap".into());
+    wireless.insert("band", "bg".into());
+    wireless.insert("channel", 6u32.into()); // Choose an appropriate channel
+
+    let mut ipv4: HashMap<&str, Value> = HashMap::new();
+    ipv4.insert("method", "shared".into());
+
+    let mut connection_info: HashMap<&str, HashMap<&str, Value>> = HashMap::new();
+    connection_info.insert("connection", connection);
+    connection_info.insert("802-11-wireless", wireless);
+    connection_info.insert("ipv4", ipv4);
+
+    disconnect_wifi(&conn).await;
+
+    let nmp = NetworkManagerProxy::new(&conn).await.expect("No proxy");
+    let wifi_device_path = find_wifi_device_path(&conn).await.expect("No Wi-Fi");
+    nmp.add_and_activate_connection(
+        connection_info,
+        &wifi_device_path,
+        &ObjectPath::from_str_unchecked("/"),
+    )
+    .await
+    .expect("No add_connection");
 }
 
 /// Connect to a Wi-fi access point
@@ -198,6 +232,13 @@ pub async fn join_wifi(path: String, password: Option<String>) {
         .expect("Could not connect to D-bus");
     let wifi_device_path = find_wifi_device_path(&conn).await.expect("No Wi-Fi");
     connect_to_wifi(&conn, wifi_device_path, path, password).await;
+}
+
+pub async fn create_config_hotspot() {
+    let conn = Connection::system()
+        .await
+        .expect("Could not connect to D-bus");
+    create_wifi_hotspot(&conn).await;
 }
 
 /// WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
