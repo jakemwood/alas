@@ -2,14 +2,14 @@ use crate::lcd_display::matrix_orbital;
 use crate::lcd_display::matrix_orbital::TOP_LEFT_BUTTON;
 use crate::lcd_display::menu_screen::MenuScreen;
 use crate::lcd_display::screen::Screen;
-use alas_lib::state::UnsafeState;
 use alas_lib::state::AlasMessage;
+use alas_lib::state::UnsafeState;
 use serialport::SerialPort;
 use std::any::Any;
 use std::io::Write;
 
 impl Screen for HomeScreen {
-    fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
+    fn draw_screen(&self, port: &mut dyn Write) {
         port.write_all("88.7 RIDGELINE RADIO".as_bytes()).unwrap();
         port.write_all("Wi-Fi? ".as_bytes()).unwrap();
         // // TODO(!): we need to figure out how to make global state accessible to the UI.
@@ -62,11 +62,7 @@ impl Screen for HomeScreen {
         }
     }
 
-    fn handle_message(
-        &self,
-        _: &UnsafeState,
-        message: AlasMessage,
-    ) -> Option<Box<dyn Screen>> {
+    fn handle_message(&self, _: &UnsafeState, message: AlasMessage) -> Option<Box<dyn Screen>> {
         match message {
             AlasMessage::VolumeChange {
                 left: left_db,
@@ -81,6 +77,19 @@ impl Screen for HomeScreen {
                     left_volume: left_scaled,
                     right_volume: right_scaled,
                 }))
+            }
+            AlasMessage::NetworkStatusChange { new_state } => {
+                if new_state == 100 {
+                    Some(Box::new(HomeScreen {
+                        wifi_ready: true,
+                        ..*self
+                    }))
+                } else {
+                    Some(Box::new(HomeScreen {
+                        wifi_ready: false,
+                        ..*self
+                    }))
+                }
             }
             _ => None,
         }

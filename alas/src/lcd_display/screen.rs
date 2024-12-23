@@ -2,10 +2,11 @@ use alas_lib::state::AlasMessage;
 use alas_lib::state::UnsafeState;
 use serialport::SerialPort;
 use std::any::Any;
+use std::io::Write;
 
 pub trait Screen: Send + Sync + Any {
     // Draw the screen from scratch
-    fn draw_screen(&self, port: &mut Box<dyn SerialPort>);
+    fn draw_screen(&self, port: &mut dyn Write);
 
     // Update only the parts of the screen that have changed
     // TODO: do we need old state?

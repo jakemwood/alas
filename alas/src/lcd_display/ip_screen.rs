@@ -6,9 +6,10 @@ use alas_lib::state::UnsafeState;
 use get_if_addrs::get_if_addrs;
 use serialport::SerialPort;
 use std::any::Any;
+use std::io::Write;
 
 impl Screen for IPScreen {
-    fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
+    fn draw_screen(&self, port: &mut dyn Write) {
         match get_if_addrs() {
             Ok(interfaces) => {
                 for iface in interfaces {
