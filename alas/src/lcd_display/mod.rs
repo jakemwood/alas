@@ -1,7 +1,7 @@
 use crate::lcd_display::matrix_orbital::clear_screen;
-use alas_lib::state::SafeState;
-use alas_lib::state::AlasState;
 use alas_lib::state::AlasMessage;
+use alas_lib::state::AlasState;
+use alas_lib::state::SafeState;
 use menu_screen::MenuScreen;
 use screen::Screen;
 use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
@@ -10,7 +10,7 @@ use std::io::{self, Read, Write};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::Receiver;
-use tokio::sync::{RwLock, RwLockWriteGuard};
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::{select, signal, task};
 

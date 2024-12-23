@@ -24,7 +24,7 @@ async fn main() {
     let wifi_changes = wifi_observer.listen_for_wifi_changes().await;;
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state);
-    let web_server = web_server::run_rocket_server(event_bus.clone());
+    let web_server = web_server::run_rocket_server(event_bus.clone()).await;
 
     // Wait for exit here! All code below is for clean-up!
 
@@ -39,7 +39,7 @@ async fn main() {
 
     // LCD should always be last to exit so that we can display all messages
     println!("Waiting for web server to await...");
-    web_server.await.await;
+    web_server.await;
     println!("Waiting for lcd rx to unwrap...");
     lcd_rx_thread.await.unwrap();
     println!("Waiting for lcd tx to unwrap...");

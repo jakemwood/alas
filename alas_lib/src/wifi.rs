@@ -12,7 +12,6 @@ use tokio::task::JoinHandle;
 use tokio::{select, signal};
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
-use zbus::proxy::ProxyImpl;
 use zbus::zvariant::{OwnedObjectPath, Value};
 use zbus::Connection;
 

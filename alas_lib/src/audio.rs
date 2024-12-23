@@ -2,7 +2,6 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Sample;
 use mp3lame_encoder::{DualPcm, Encoder, FlushNoGap};
 use shout::ShoutConn;
-use std::cmp::PartialEq;
 use std::fs::File;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -12,13 +11,12 @@ use tokio::runtime::Handle;
 use tokio::sync::broadcast::Sender;
 
 use crate::config::AlasConfig;
-use crate::state::{AlasMessage, AlasState, SafeState};
 use crate::state::AlasMessage::VolumeChange;
+use crate::state::{AlasMessage, SafeState};
 use bus::Bus;
 use futures::future::{join_all, JoinAll};
 use tokio::task::JoinHandle;
 use tokio::{signal, task};
-use tokio::sync::RwLock;
 
 /// Starts the thread for handling audio.
 ///
@@ -61,7 +59,7 @@ pub fn start(
             loop {
                 let mut input = match icecast_rx.recv() {
                     Ok(input) => input,
-                    Err(e) => {
+                    Err(_) => {
                         break;
                     }
                 };
@@ -82,15 +80,22 @@ pub fn start(
                                 }
                             }
                             Err(err) => {
-                                eprintln!("Error writing to Icecast: {:?} (line 102)", err);
                                 is_streaming = false;
                                 let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
+
+                                // Attempt to reconnect
+                                match icecast_connection.reconnect() {
+                                    Ok(_) => {},
+                                    Err(e) => {
+                                        eprintln!("Icecast re-connect error: {:?}", e);
+                                    }
+                                }
                             }
                         }
 
                         input = match icecast_rx.recv() {
                             Ok(input) => input,
-                            Err(e) => {
+                            Err(_) => {
                                 break;
                             }
                         }
@@ -101,8 +106,6 @@ pub fn start(
                 }
             }
 
-            println!("Acquiring state lock 124");
-            is_streaming = false;
             let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
             println!("Closed Icecast streaming thread");
         });
@@ -126,7 +129,7 @@ pub fn start(
             loop {
                 let mut input = match file_rx.recv() {
                     Ok(input) => input,
-                    Err(e) => {
+                    Err(_) => {
                         break;
                     }
                 };
@@ -142,19 +145,19 @@ pub fn start(
                                 if !&is_recording {
                                     is_recording = true;
                                     // Send message to bus that we are recording
-                                    &file_bus.send(AlasMessage::RecordingStarted).unwrap();
+                                    let _ = &file_bus.send(AlasMessage::RecordingStarted).unwrap();
                                 }
                             }
                             Err(err) => {
                                 eprintln!("Error writing to file: {:?} 174", err);
                                 is_recording = false;
-                                &file_bus.send(AlasMessage::RecordingStopped).unwrap();
+                                let _ = &file_bus.send(AlasMessage::RecordingStopped).unwrap();
                             }
                         }
 
                         input = match file_rx.recv() {
                             Ok(input) => input,
-                            Err(e) => {
+                            Err(_) => {
                                 break;
                             }
                         };
@@ -165,8 +168,6 @@ pub fn start(
                 }
             }
 
-            println!("Acquiring state lock 198");
-            is_recording = false;
             let _ = &file_bus.send(AlasMessage::RecordingStopped);
             println!("Exiting file write thread");
         });
