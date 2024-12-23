@@ -1,5 +1,5 @@
-use alas_lib::state::UnsafeState;
 use alas_lib::state::AlasMessage;
+use alas_lib::state::UnsafeState;
 use serialport::SerialPort;
 use std::any::Any;
 

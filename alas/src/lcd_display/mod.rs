@@ -15,10 +15,10 @@ use tokio::task::JoinHandle;
 use tokio::{select, signal, task};
 
 mod home_screen;
+mod ip_screen;
 mod matrix_orbital;
 mod menu_screen;
 mod screen;
-mod ip_screen;
 
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>());

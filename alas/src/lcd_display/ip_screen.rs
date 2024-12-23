@@ -1,13 +1,11 @@
-use crate::lcd_display::matrix_orbital::{
-    BOTTOM_LEFT_BUTTON, TOP_LEFT_BUTTON,
-};
+use crate::lcd_display::matrix_orbital::{BOTTOM_LEFT_BUTTON, TOP_LEFT_BUTTON};
 use crate::lcd_display::menu_screen::MenuScreen;
 use crate::lcd_display::screen::Screen;
 use alas_lib::state::AlasMessage;
 use alas_lib::state::UnsafeState;
+use get_if_addrs::get_if_addrs;
 use serialport::SerialPort;
 use std::any::Any;
-use get_if_addrs::get_if_addrs;
 
 impl Screen for IPScreen {
     fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
@@ -57,8 +55,7 @@ impl Screen for IPScreen {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct IPScreen {
-}
+pub struct IPScreen {}
 
 impl IPScreen {
     pub fn new() -> Self {

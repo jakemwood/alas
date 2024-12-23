@@ -1,5 +1,6 @@
 use alas_lib::do_things;
-use alas_lib::wifi::{WiFiNetwork};
+use alas_lib::state::AlasMessage;
+use alas_lib::wifi::WiFiNetwork;
 use rocket::fs::{FileServer, NamedFile};
 use rocket::http::Status;
 use rocket::response::stream::{Event, EventStream};
@@ -12,7 +13,6 @@ use std::sync::Arc;
 use tokio::select;
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
-use alas_lib::state::AlasMessage;
 
 #[get("/")]
 pub async fn index() -> io::Result<NamedFile> {

@@ -2,7 +2,8 @@ use serialport::SerialPort;
 use std::io;
 use std::io::Write;
 
-const SCREEN_WIDTH: u8 = 20;
+pub const SCREEN_WIDTH: u8 = 20;
+pub const SCREEN_HEIGHT: u8 = 4;
 /**
 On input:
 

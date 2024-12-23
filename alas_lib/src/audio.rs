@@ -65,9 +65,7 @@ pub fn start(
                 };
 
                 if it_desire_to_broadcast.load(Ordering::Relaxed) {
-                    let config = {
-                        (&it_app_state.blocking_read().config).clone()
-                    };
+                    let config = { (&it_app_state.blocking_read().config).clone() };
                     let icecast_connection = connect_to_icecast(&config);
 
                     while it_desire_to_broadcast.load(Ordering::Relaxed) {
@@ -86,7 +84,7 @@ pub fn start(
 
                                 // Attempt to reconnect
                                 match icecast_connection.reconnect() {
-                                    Ok(_) => {},
+                                    Ok(_) => {}
                                     Err(e) => {
                                         eprintln!("Icecast re-connect error: {:?}", e);
                                     }
