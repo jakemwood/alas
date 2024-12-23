@@ -65,8 +65,10 @@ pub fn start(
                 };
 
                 if it_desire_to_broadcast.load(Ordering::Relaxed) {
-                    let config = &it_app_state.blocking_read().config;
-                    let icecast_connection = connect_to_icecast(config);
+                    let config = {
+                        (&it_app_state.blocking_read().config).clone()
+                    };
+                    let icecast_connection = connect_to_icecast(&config);
 
                     while it_desire_to_broadcast.load(Ordering::Relaxed) {
                         let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
@@ -74,7 +76,6 @@ pub fn start(
                         match icecast_connection.send(&mp3_buffer) {
                             Ok(_) => {
                                 if !&is_streaming {
-                                    println!("Acquiring state lock 89");
                                     is_streaming = true;
                                     let _ = &icecast_bus.send(AlasMessage::StreamingStarted);
                                 }

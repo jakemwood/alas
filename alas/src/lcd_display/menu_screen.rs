@@ -10,14 +10,15 @@ use serialport::SerialPort;
 use std::any::Any;
 use std::cmp::{max, min};
 use std::io::Write;
+use crate::lcd_display::ip_screen::IPScreen;
 
 impl Screen for MenuScreen {
     fn draw_screen(&self, port: &mut Box<dyn SerialPort>) {
         let options = [
+            "IP Addresses",
             "Reboot",
             "Reset Settings",
             "Another Setting",
-            "Another setting",
         ];
 
         let mut bytes_to_write: Vec<u8> = Vec::new();
@@ -57,7 +58,14 @@ impl Screen for MenuScreen {
             DOWN_BUTTON => Some(Box::new(MenuScreen {
                 current: min(self.current + 1, 4),
             })),
-            CENTER_BUTTON => Some(Box::new(HomeScreen::new(app_state))),
+            CENTER_BUTTON => {
+                if self.current == 1 {
+                    Some(Box::new(IPScreen::new()))
+                }
+                else {
+                    Some(Box::new(HomeScreen::new(app_state)))
+                }
+            },
             TOP_LEFT_BUTTON | BOTTOM_LEFT_BUTTON => Some(Box::new(HomeScreen::new(app_state))),
             _ => None,
         }

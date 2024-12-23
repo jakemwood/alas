@@ -18,6 +18,7 @@ mod home_screen;
 mod matrix_orbital;
 mod menu_screen;
 mod screen;
+mod ip_screen;
 
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>());
@@ -29,18 +30,46 @@ async fn handle_message(
     message: AlasMessage,
     write_port: &mut Box<dyn SerialPort>,
 ) {
-
+    // Some messages are not screen-specific. Handle those here.
+    match message {
+        AlasMessage::RecordingStarted => {
+            let mut state = app_state.write().await;
+            (*state).is_recording = true;
+            change_on_air_lights(&state, write_port);
+        }
+        AlasMessage::RecordingStopped => {
+            let mut state = app_state.write().await;
+            (*state).is_recording = false;
+            change_on_air_lights(&state, write_port);
+        }
+        AlasMessage::StreamingStarted => {
+            let mut state = app_state.write().await;
+            (*state).is_streaming = true;
+            change_on_air_lights(&state, write_port);
+        }
+        AlasMessage::StreamingStopped => {
+            let mut state = app_state.write().await;
+            (*state).is_streaming = false;
+            change_on_air_lights(&state, write_port);
+        }
+        _ => {}
+    }
+    // At this point our write locks should be released, making way for a read lock below.
 
     let mut screen = current_state.write().await;
-    let app_state = app_state.read().await;
+
+    // Clone this state so that we can release our lock quickly
+    let app_state = app_state.read().await.clone();
+
     let new_screen = (*screen).handle_message(&app_state, message);
+
     if let Some(new_screen) = new_screen {
         if new_screen.as_any().type_id() != (*screen).as_any().type_id() {
             // Clear the screen
             println!("Clearing the screen!! You should not see this message very often!");
             // print_type_of(&new_screen.as_any());
             // print_type_of(&(*screen).as_any());
-            matrix_orbital::clear_screen(write_port).unwrap();
+            clear_screen(write_port).unwrap();
             new_screen.draw_screen(write_port);
         } else {
             // If the two states are identical, we do not need to redraw the screen
@@ -141,6 +170,9 @@ pub async fn start(
         }
 
         println!("End of LCD Writer loop reached!");
+        write_port.write_all(&[254, 70]).unwrap(); // turn off screen
+        write_port.write_all(&[254, 86, 5]).unwrap(); // turn off gpio leds
+        write_port.write_all(&[254, 86, 3]).unwrap(); // turn off gpio leds
         clear_screen(&mut write_port).unwrap();
         write_port
             .write_all("Software shutdown...".as_bytes())
@@ -190,7 +222,8 @@ pub async fn start(
     // Now that everything is started, send the first screen
     matrix_orbital::set_brightness(&mut port, 0.5).expect("Could not set brightness"); // Set brightness to 50%
                                                                                        // Initialize the horizontal bar graphs (page 22 of the LCD manual)
-    port.write_all(&[254, 104]).unwrap();
+    port.write_all(&[254, 66, 0]).unwrap(); // turn on display
+    port.write_all(&[254, 104]).unwrap(); // load horizontal bars
 
     // Clear the screen and then draw the first screen *we* want to show
     let first_screen = display_state.read().await;
