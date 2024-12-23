@@ -13,3 +13,6 @@ build:
 
 deploy:
     scp target/aarch64-unknown-linux-gnu/release/alas ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}
+
+test:
+    cross test --target aarch64-unknown-linux-gnu
