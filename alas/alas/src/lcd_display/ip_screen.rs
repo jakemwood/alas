@@ -7,16 +7,23 @@ use get_if_addrs::get_if_addrs;
 use serialport::SerialPort;
 use std::any::Any;
 use std::io::Write;
+use std::net::IpAddr;
 
 impl Screen for IPScreen {
     fn draw_screen(&self, port: &mut dyn Write) {
         match get_if_addrs() {
             Ok(interfaces) => {
                 for iface in interfaces {
-                    let ip = iface.ip();
-                    port.write_all(ip.to_string().as_bytes()).unwrap();
-                    port.write_all("\r\n".as_bytes()).unwrap();
-                    println!("Interface: {}, IP: {}", iface.name, ip);
+                    match iface.ip() {
+                        IpAddr::V4(ip) => {
+                            port.write_all(ip.to_string().as_bytes()).unwrap();
+                            port.write_all("\r\n".as_bytes()).unwrap();
+                            println!("Interface: {}, IP: {}", iface.name, ip);
+                        },
+                        IpAddr::V6(ip) => {
+                            println!("IPV6 interface: {}, {}", iface.name, ip);
+                        }
+                    }
                 }
             }
             Err(e) => {
@@ -27,15 +34,6 @@ impl Screen for IPScreen {
     }
 
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
-        // for row in 1..5 {
-        //     port.write_all(matrix_orbital::set_cursor_bytes(1, row).as_slice())
-        //         .unwrap();
-        //     if row == self.current {
-        //         port.write_all("*".as_bytes()).unwrap();
-        //     } else {
-        //         port.write_all(" ".as_bytes()).unwrap();
-        //     }
-        // }
     }
 
     fn handle_button(&self, _: &UnsafeState, button: u8) -> Option<Box<dyn Screen>> {

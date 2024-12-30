@@ -318,7 +318,6 @@ impl WiFiObserver {
     async fn set_current_wifi_state(&self, new_state: u32) {
         let new_wifi = WiFiObserver::get_current_access_point().await;
         if let Some(new_wifi) = new_wifi {
-            dbg!(WiFiObserver::get_current_access_point().await);
             let new_state = {
                 if new_wifi.ssid == String::from(ALAS_CONFIG_HOTSPOT_NAME) {
                     // We are NOT connected to anything real!

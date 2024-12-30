@@ -1,0 +1,13 @@
+[package]
+name = "alas"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5.1", features = ["json"] }
+serde = "1.0.215"
+alas_lib = { path = "../alas_lib" }
+tokio = "1.41.1"
+#sentry = "0.35.0"
+serialport = "4.6.1"
+get_if_addrs = "0.5.3"
