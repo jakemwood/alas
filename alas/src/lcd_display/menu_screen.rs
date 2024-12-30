@@ -25,10 +25,10 @@ const MENU_OPTIONS: [&str; 7] = [
     "IP Addresses",
     "Reconfigure WiFi",
     "Reboot",
-    "Another Setting",
-    "A fifth setting",
-    "A sixth setting",
-    "A seventh setting",
+    "Shut Down",
+    "Reserved",
+    "Reserved",
+    "Reserved",
 ];
 
 impl Screen for MenuScreen {
@@ -65,7 +65,14 @@ impl Screen for MenuScreen {
     fn handle_button(&self, app_state: &UnsafeState, button: u8) -> Option<Box<dyn Screen>> {
         match button {
             UP_BUTTON => {
-                let next_value = max(self.current - 1, 0);
+                let next_value = {
+                    if self.current > 0 {
+                        self.current - 1
+                    }
+                    else {
+                        0
+                    }
+                };
                 let mut start_idx = self.start_idx;
 
                 if next_value < self.start_idx {
@@ -78,7 +85,7 @@ impl Screen for MenuScreen {
                 }))
             }
             DOWN_BUTTON => {
-                let next_value = min(self.current + 1, MENU_OPTIONS.len() as u8);
+                let next_value = min(self.current + 1, MENU_OPTIONS.len() as u8 - 1);
                 let mut start_idx = self.start_idx;
 
                 // If the next_value has scrolled out of view, adjust.
@@ -93,8 +100,8 @@ impl Screen for MenuScreen {
             }
             CENTER_BUTTON => {
                 match self.current {
-                    1 => Some(Box::new(IPScreen::new())),
-                    2 => {
+                    0 => Some(Box::new(IPScreen::new())),
+                    1 => {
                         // This is ridiculous, but technically we are *currently* inside of an
                         // async runtime, BUT we cannot use the async runtime because we also want
                         // dynamic dispatch to work with our multiple screens. Dynamic dispatch
@@ -211,7 +218,28 @@ mod tests {
         let written_data = output_buffer.into_inner();
         assert_eq!(
             written_data,
-            b"* IP Addresses\r\n  Reconfigure WiFi\r\n  Reboot\r\n  Another Setting"
+            b"* IP Addresses\r\n  Reconfigure WiFi\r\n  Reboot\r\n  Shut Down"
+        );
+    }
+
+    #[test]
+    fn test_draw_after_up() {
+        let mut screen_one = MenuScreen {
+            current: 0,
+            start_idx: 0,
+        };
+
+        // Use an in-memory buffer to simulate the Write trait
+        let mut output_buffer = Cursor::new(Vec::new());
+        let screen_two = screen_one.handle_button(&AlasState::test(), UP_BUTTON).unwrap();
+
+        screen_two.draw_screen(&mut output_buffer);
+
+        // Verify the output written to the buffer
+        let written_data = output_buffer.into_inner();
+        assert_eq!(
+            written_data,
+            b"* IP Addresses\r\n  Reconfigure WiFi\r\n  Reboot\r\n  Shut Down"
         );
     }
 }

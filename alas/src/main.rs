@@ -3,7 +3,7 @@ mod web_server;
 
 use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
-use alas_lib::wifi::WiFiObserver;
+use alas_lib::wifi::{WiFiObserver};
 use serialport::SerialPort;
 use std::io::Write;
 use std::sync::Arc;
@@ -20,8 +20,8 @@ async fn main() {
     let lcd_rx = event_bus.subscribe();
     let (lcd_rx_thread, lcd_tx_thread) = lcd_display::start(lcd_rx, &state).await;
 
-    let wifi_observer = WiFiObserver::new(event_bus.clone());
-    let wifi_changes = wifi_observer.listen_for_wifi_changes().await;
+    let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
+    let wifi_changes = wifi_observer.listen().await;
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state);
     let web_server = web_server::run_rocket_server(event_bus.clone()).await;

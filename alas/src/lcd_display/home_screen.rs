@@ -7,6 +7,7 @@ use alas_lib::state::UnsafeState;
 use serialport::SerialPort;
 use std::any::Any;
 use std::io::Write;
+use alas_lib::wifi::AlasWiFiState;
 
 impl Screen for HomeScreen {
     fn draw_screen(&self, port: &mut dyn Write) {
@@ -43,13 +44,19 @@ impl Screen for HomeScreen {
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
         // Do nothing!
         // Set the bar graph values
-
-        // let left_scaled = ((1.0 + left_db / min_db) * 100.0).clamp(0.0, 100.0);
-        // let right_scaled = ((1.0 + right_db / min_db) * 100.0).clamp(0.0, 100.0);
         port.write_all(&[254, 124, 3, 3, 0, self.left_volume])
             .unwrap();
         port.write_all(&[254, 124, 3, 4, 0, self.right_volume])
             .unwrap();
+
+        // Draw Wi-Fi and cellular yes/no
+        port.write_all(&*matrix_orbital::set_cursor_bytes(8, 2)).unwrap();
+        if self.wifi_ready {
+            port.write_all(b"Y").unwrap();
+        }
+        else {
+            port.write_all(b"N").unwrap();
+        }
         // println!("Left volume {:?} Right Volume {:?}", self.left_volume, self.right_volume);
     }
 
@@ -79,7 +86,7 @@ impl Screen for HomeScreen {
                 }))
             }
             AlasMessage::NetworkStatusChange { new_state } => {
-                if new_state == 100 {
+                if new_state == AlasWiFiState::Connected {
                     Some(Box::new(HomeScreen {
                         wifi_ready: true,
                         ..*self

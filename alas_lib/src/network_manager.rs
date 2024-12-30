@@ -81,6 +81,10 @@ pub trait WiFiDevice {
     fn get_access_points(&self) -> Result<Vec<OwnedObjectPath>>;
     fn get_all_access_points(&self) -> Result<Vec<OwnedObjectPath>>;
     fn request_scan(&self, options: HashMap<&str, Value<'_>>) -> Result<()>;
+
+    /// ActiveAccessPoint property
+    #[zbus(property)]
+    fn active_access_point(&self) -> Result<OwnedObjectPath>;
 }
 
 #[proxy(

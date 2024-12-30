@@ -3,6 +3,7 @@ use crate::config::{
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use crate::wifi::AlasWiFiState;
 
 #[derive(Clone)]
 pub struct AlasState {
@@ -61,7 +62,7 @@ impl AlasState {
 #[derive(Debug, Clone)]
 pub enum AlasMessage {
     Exit,
-    NetworkStatusChange { new_state: u32 },
+    NetworkStatusChange { new_state: AlasWiFiState },
     Ticker { count: u32 },
     VolumeChange { left: f32, right: f32 },
     RecordingStarted,
