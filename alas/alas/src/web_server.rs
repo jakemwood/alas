@@ -70,18 +70,17 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
 async fn volume(broadcast: &State<Sender<AlasMessage>>, mut end: Shutdown) -> EventStream![] {
     let mut broadcast = broadcast.subscribe();
     EventStream! {
-        yield Event::data("hello");
         loop {
             select! {
                 Ok(msg) = broadcast.recv() => {
                     match msg {
                         AlasMessage::VolumeChange { left, right } => {
-
+                            // TODO: need to throttle these messages
                             yield Event::data(String::from(left.to_be_bytes()));
                         },
                         _ => {}
                     }
-                }
+                },
                 _ = &mut end => {
                     println!("This worked correctly!");
                     break;
