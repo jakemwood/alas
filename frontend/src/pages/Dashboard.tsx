@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../lib/store';
-import { api } from '../lib/api';
+import { useApi } from '../lib/api';
 import { Wifi, WifiOff, Signal, Volume2, Radio } from 'lucide-react';
 
 export function Dashboard() {
   const { systemStatus, updateSystemStatus } = useStore();
+  const api = useApi();
 
   useEffect(() => {
     const unsubscribe = api.subscribeToVolumeUpdates((volume) => {
@@ -74,10 +75,6 @@ export function Dashboard() {
             <span className={systemStatus.icecast.connected ? 'text-green-500' : 'text-red-500'}>
               {systemStatus.icecast.connected ? 'Connected' : 'Disconnected'}
             </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Listeners</span>
-            <span>{systemStatus.icecast.listeners}</span>
           </div>
         </div>
       </div>

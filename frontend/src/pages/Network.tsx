@@ -1,8 +1,9 @@
 import React from 'react';
 import { useStore } from '../lib/store';
-import { api } from '../lib/api';
+import { useApi } from '../lib/api';
 
 export function Network() {
+  const api = useApi();
   const { networkConfig, setNetworkConfig } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -2,14 +2,15 @@ use alas_lib::do_things;
 use alas_lib::state::AlasMessage;
 use alas_lib::wifi::WiFiNetwork;
 use rocket::fs::{FileServer, NamedFile};
-use rocket::http::Status;
+use rocket::http::{Header, Status};
 use rocket::response::stream::{Event, EventStream};
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
-use rocket::{get, launch, post, routes, Build, Config, Error, Ignite, Rocket, Shutdown, State};
+use rocket::{get, launch, post, routes, Build, Config, Error, Ignite, Request, Response, Rocket, Shutdown, State};
 use std::io;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
+use rocket::fairing::{Fairing, Info, Kind};
 use tokio::select;
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
@@ -65,42 +66,58 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
     Status::Created
 }
 
-// #[get("/events")]
-// async fn events(broadcast: &State<Receiver<u32>>, mut end: Shutdown) -> EventStream![] {
-//     // let mut receiver =
-//     EventStream! {
-//         yield Event::data("hello");
-//         loop {
-//             let msg = *broadcast.borrow_and_update();
-//             if let Some(state_code) = msg {
-//                 println!("Sending server sent event stuff...");
-//                 yield Event::data(state_code.to_string());
-//             }
-//             select! {
-//                 val = broadcast.changed() => {
-//                     if val.is_err() {
-//                         yield Event::data("wifi receiver disappeared!");
-//                         break;
-//                     }
-//                 }
-//                 _ = &mut end => {
-//                     println!("This worked correctly!");
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-// }
+#[get("/audio/volume")]
+async fn volume(broadcast: &State<Sender<AlasMessage>>, mut end: Shutdown) -> EventStream![] {
+    let mut broadcast = broadcast.subscribe();
+    EventStream! {
+        yield Event::data("hello");
+        loop {
+            select! {
+                Ok(msg) = broadcast.recv() => {
+                    match msg {
+                        AlasMessage::VolumeChange { left, right } => {
+
+                            yield Event::data(String::from(left.to_be_bytes()));
+                        },
+                        _ => {}
+                    }
+                }
+                _ = &mut end => {
+                    println!("This worked correctly!");
+                    break;
+                }
+            }
+        }
+    }
+}
+
+pub struct AddHeaders;
+
+#[rocket::async_trait]
+impl Fairing for AddHeaders {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add custom header to all responses",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "http://localhost:5173"));
+    }
+}
+
 
 fn rocket(bus: Sender<AlasMessage>) -> Rocket<Build> {
     rocket::build()
         .manage(bus)
+        .attach(AddHeaders)
         .configure(Config {
             address: Ipv4Addr::new(0, 0, 0, 0).into(),
             ..Config::release_default()
         })
         .mount("/static", FileServer::from("static"))
-        .mount("/", routes![index, go, available_wifi, connect_to_wifi])
+        .mount("/", routes![index, go, available_wifi, connect_to_wifi, volume])
         .mount("/null", routes![do_null])
 }
 

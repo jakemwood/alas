@@ -34,6 +34,5 @@ export interface SystemStatus {
   };
   icecast: {
     connected: boolean;
-    listeners: number;
   };
 }

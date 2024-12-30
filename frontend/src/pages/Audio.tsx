@@ -1,9 +1,10 @@
 import React from 'react';
 import { useStore } from '../lib/store';
-import { api } from '../lib/api';
+import { useApi } from '../lib/api';
 
 export function Audio() {
   const { audioConfig, setAudioConfig } = useStore();
+  const api = useApi();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

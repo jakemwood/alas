@@ -34,12 +34,11 @@ export const useStore = create<AppState>((set) => ({
       signalStrength: 0,
     },
     audio: {
-      currentVolume: -60,
+      currentVolume: -30,
       isActive: false,
     },
     icecast: {
       connected: false,
-      listeners: 0,
     },
   },
   setNetworkConfig: (config) => set({ networkConfig: config }),

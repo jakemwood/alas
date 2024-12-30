@@ -10,6 +10,7 @@ import { Icecast } from './pages/Icecast';
 import { Settings } from './pages/Settings';
 import { makeServer } from './lib/mock-server';
 
+// @ts-ignore
 if (process.env.NODE_ENV === 'development') {
   makeServer();
 }

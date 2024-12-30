@@ -22,6 +22,7 @@ export function LoginForm() {
       login(ipAddress);
       navigate('/');
     } catch (err) {
+      console.error(err);
       setError('Invalid credentials');
     } finally {
       setIsLoading(false);
@@ -33,7 +34,7 @@ export function LoginForm() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <Settings className="mx-auto h-12 w-12 text-blue-500" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Admin Login</h2>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">ALAS Login</h2>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

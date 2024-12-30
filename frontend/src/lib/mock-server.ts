@@ -30,13 +30,13 @@ export function makeServer({ environment = 'development' } = {}) {
     },
 
     routes() {
-      this.namespace = 'api';
+      this.urlPrefix = "http://ridgeline-live.local:8000";
 
       // Auth endpoints
       this.post('/auth/login', (schema, request) => {
         const attrs = JSON.parse(request.requestBody);
         // Mock authentication - in development, accept any credentials
-        if (attrs.ipAddress && attrs.password) {
+        if (attrs.password) {
           return { success: true };
         }
         return new Response(401, {}, { error: 'Invalid credentials' });
