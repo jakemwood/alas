@@ -14,6 +14,7 @@ use rocket::fairing::{Fairing, Info, Kind};
 use tokio::select;
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
+use tokio::time::{Duration, Instant};
 
 #[get("/")]
 pub async fn index() -> io::Result<NamedFile> {
@@ -68,7 +69,9 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
 
 #[get("/audio/volume")]
 async fn volume(broadcast: &State<Sender<AlasMessage>>, mut end: Shutdown) -> EventStream![] {
+    const THROTTLE_MS: u64 = 50;
     let mut broadcast = broadcast.subscribe();
+    let mut last_message_sent = Instant::now() - Duration::from_millis(THROTTLE_MS);
     EventStream! {
         loop {
             select! {
@@ -76,7 +79,11 @@ async fn volume(broadcast: &State<Sender<AlasMessage>>, mut end: Shutdown) -> Ev
                     match msg {
                         AlasMessage::VolumeChange { left, right } => {
                             // TODO: need to throttle these messages
-                            yield Event::data(String::from(left.to_be_bytes()));
+                            let now = Instant::now();
+                            if now.duration_since(last_message_sent) >= Duration::from_millis(THROTTLE_MS) {
+                                last_message_sent = now;
+                                yield Event::data(left.to_string());
+                            }
                         },
                         _ => {}
                     }
