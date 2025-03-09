@@ -1,5 +1,10 @@
 use crate::config::{
-    load_config, AlasAudioConfig, AlasCellularConfig, AlasConfig, AlasIcecastConfig, AlasWiFiConfig,
+    load_config,
+    AlasAudioConfig,
+    AlasCellularConfig,
+    AlasConfig,
+    AlasIcecastConfig,
+    AlasWiFiConfig,
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -54,6 +59,7 @@ impl AlasState {
                     name: "My WiFi".to_string(),
                     password: "password".to_string(),
                 },
+                auth: None,
             },
         }
     }
@@ -62,9 +68,16 @@ impl AlasState {
 #[derive(Debug, Clone)]
 pub enum AlasMessage {
     Exit,
-    NetworkStatusChange { new_state: AlasWiFiState },
-    Ticker { count: u32 },
-    VolumeChange { left: f32, right: f32 },
+    NetworkStatusChange {
+        new_state: AlasWiFiState,
+    },
+    Ticker {
+        count: u32,
+    },
+    VolumeChange {
+        left: f32,
+        right: f32,
+    },
     RecordingStarted,
     RecordingStopped,
     StreamingStarted,

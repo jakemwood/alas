@@ -19,7 +19,7 @@ pub trait Screen: Send + Sync + Any {
     fn handle_message(
         &self,
         app_state: &UnsafeState,
-        message: AlasMessage,
+        message: AlasMessage
     ) -> Option<Box<dyn Screen>>;
 
     fn as_any(&self) -> &dyn Any;

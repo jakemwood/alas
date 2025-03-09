@@ -25,11 +25,11 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     // .await;
     // println!("Connected to WiFi?!");
 
-    let obj_man_res = zbus::fdo::ObjectManagerProxy::builder(&conn)
+    let obj_man_res = zbus::fdo::ObjectManagerProxy
+        ::builder(&conn)
         .destination("org.freedesktop.ModemManager1")?
         .path("/org/freedesktop/ModemManager1")?
-        .build()
-        .await?;
+        .build().await?;
 
     let managed_objects = obj_man_res.get_managed_objects().await?;
     let keys = managed_objects
@@ -45,10 +45,7 @@ pub async fn do_things() -> Result<(), Box<dyn std::error::Error>> {
     let status = simple.get_status().await?;
 
     let operator_name = utils::value_to_string(
-        status
-            .get("m3gpp-operator-name")
-            .expect("No operator name given")
-            .to_owned(),
+        status.get("m3gpp-operator-name").expect("No operator name given").to_owned()
     )?;
     dbg!(operator_name);
 

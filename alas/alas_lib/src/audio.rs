@@ -1,22 +1,22 @@
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::traits::{ DeviceTrait, HostTrait, StreamTrait };
 use cpal::Sample;
-use mp3lame_encoder::{DualPcm, Encoder, FlushNoGap};
+use mp3lame_encoder::{ DualPcm, Encoder, FlushNoGap };
 use shout::ShoutConn;
 use std::fs::File;
 use std::io::Write;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{ AtomicBool, Ordering };
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{ SystemTime, UNIX_EPOCH };
 use tokio::runtime::Handle;
 use tokio::sync::broadcast::Sender;
 
 use crate::config::AlasConfig;
 use crate::state::AlasMessage::VolumeChange;
-use crate::state::{AlasMessage, SafeState};
+use crate::state::{ AlasMessage, SafeState };
 use bus::Bus;
-use futures::future::{join_all, JoinAll};
+use futures::future::{ join_all, JoinAll };
 use tokio::task::JoinHandle;
-use tokio::{signal, task};
+use tokio::{ signal, task };
 
 /// Starts the thread for handling audio.
 ///
@@ -26,7 +26,7 @@ use tokio::{signal, task};
 /// times.
 pub fn start(
     bus: Sender<AlasMessage>,
-    alas_state: &SafeState,
+    alas_state: &SafeState
 ) -> JoinHandle<JoinAll<JoinHandle<()>>> {
     let handler = Handle::current();
     let alas_state = alas_state.clone();
@@ -97,7 +97,7 @@ pub fn start(
                             Err(_) => {
                                 break;
                             }
-                        }
+                        };
                     }
 
                     is_streaming = false;
@@ -179,38 +179,30 @@ pub fn start(
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        println!(
-            "Default sample rate: {:?}",
-            audio_device_config.sample_rate()
-        );
-        println!(
-            "Default sample format: {:?}",
-            audio_device_config.sample_format()
-        );
-        println!(
-            "Default sample size: {:?}",
-            audio_device_config.sample_format().sample_size()
-        );
+        println!("Default sample rate: {:?}", audio_device_config.sample_rate());
+        println!("Default sample format: {:?}", audio_device_config.sample_format());
+        println!("Default sample size: {:?}", audio_device_config.sample_format().sample_size());
 
         let stream = match audio_device_config.sample_format() {
             // TODO: HiFiBerry supports F32 by default, so that's what
             // we have implemented. Others could be implemented later.
-            cpal::SampleFormat::F32 => device
-                .build_input_stream(
-                    &audio_device_config.into(),
-                    move |data, _: &_| {
-                        handle_samples::<f32>(
-                            data,
-                            &bus,
-                            &mut desire_to_broadcast,
-                            &mut audio_last_seen,
-                            &mut audio_bus,
-                        )
-                    },
-                    err_fn,
-                    None,
-                )
-                .unwrap(),
+            cpal::SampleFormat::F32 =>
+                device
+                    .build_input_stream(
+                        &audio_device_config.into(),
+                        move |data, _: &_| {
+                            handle_samples::<f32>(
+                                data,
+                                &bus,
+                                &mut desire_to_broadcast,
+                                &mut audio_last_seen,
+                                &mut audio_bus
+                            )
+                        },
+                        err_fn,
+                        None
+                    )
+                    .unwrap(),
             sample_format => panic!("Unsupported sample format: {:?}", sample_format),
         };
 
@@ -218,9 +210,7 @@ pub fn start(
         println!("After play!");
 
         handler.block_on(async {
-            signal::ctrl_c()
-                .await
-                .expect("failed to listen for exit event");
+            signal::ctrl_c().await.expect("failed to listen for exit event");
         });
         println!("After sleep!");
 
@@ -228,10 +218,7 @@ pub fn start(
     })
 }
 
-fn make_mp3_samples<T>(mp3_encoder: &mut Encoder, input: &[T]) -> Vec<u8>
-where
-    T: Sample,
-{
+fn make_mp3_samples<T>(mp3_encoder: &mut Encoder, input: &[T]) -> Vec<u8> where T: Sample {
     let mut left_channel = Vec::new();
     let mut right_channel = Vec::new();
 
@@ -249,9 +236,7 @@ where
 
     let mut mp3_buffer = Vec::new();
     mp3_buffer.reserve(mp3lame_encoder::max_required_buffer_size(data.left.len()));
-    let encoded_size = mp3_encoder
-        .encode(data, mp3_buffer.spare_capacity_mut())
-        .expect("Encode");
+    let encoded_size = mp3_encoder.encode(data, mp3_buffer.spare_capacity_mut()).expect("Encode");
     // TODO: surely there is a way to do this safely without offending mp3s?
     unsafe {
         mp3_buffer.set_len(mp3_buffer.len().wrapping_add(encoded_size));
@@ -269,15 +254,14 @@ where
 }
 
 fn open_file_named_now() -> File {
-    let formatted_time = chrono::Local::now()
-        .format("%Y-%m-%dT%H%M%S.mp3")
-        .to_string();
+    let formatted_time = chrono::Local::now().format("%Y-%m-%dT%H%M%S.mp3").to_string();
     File::create(formatted_time).expect("to open file")
 }
 
 fn connect_to_icecast(alas_config: &AlasConfig) -> ShoutConn {
     println!("Connecting to {}", alas_config.icecast.hostname);
-    shout::ShoutConnBuilder::new()
+    shout::ShoutConnBuilder
+        ::new()
         // TODO(!): pull from configuration values
         .host(alas_config.icecast.hostname.clone())
         .port(alas_config.icecast.port)
@@ -296,7 +280,7 @@ fn float_to_i16(sample: f32) -> i16 {
     // Map from [-1.0, 1.0] to [-32768, 32767] (i16 range)
     // Multiplying by i16::MAX (32767) handles positive values correctly,
     // and negative values are safely converted as well.
-    (clamped * i16::MAX as f32) as i16
+    (clamped * (i16::MAX as f32)) as i16
 }
 
 fn handle_samples<T>(
@@ -304,15 +288,13 @@ fn handle_samples<T>(
     bus: &Sender<AlasMessage>,
     desire_to_broadcast: &AtomicBool,
     audio_last_seen: &mut SystemTime,
-    sender: &mut Bus<Vec<T>>,
-) where
-    T: Sample,
+    sender: &mut Bus<Vec<T>>
+)
+    where T: Sample
 {
     let channels = 2;
     let (left, right) = calculate_rms_levels(&input, channels);
-    let _ = &bus
-        .send(VolumeChange { left, right })
-        .expect("Could not update volume");
+    let _ = &bus.send(VolumeChange { left, right }).expect("Could not update volume");
 
     if left > -55.0 || right > -55.0 {
         // TODO(config)
@@ -321,14 +303,10 @@ fn handle_samples<T>(
             desire_to_broadcast.store(true, Ordering::Relaxed);
         }
         *audio_last_seen = SystemTime::now();
-    }
-    // Before we do anything else, verify that we should still be recording/streaming
-    // TODO(config): 15 seconds needs to be configured (and usually much longer)
-    else if SystemTime::now()
-        .duration_since(*audio_last_seen)
-        .unwrap()
-        .as_secs()
-        > 15
+    } else if
+        // Before we do anything else, verify that we should still be recording/streaming
+        // TODO(config): 15 seconds needs to be configured (and usually much longer)
+        SystemTime::now().duration_since(*audio_last_seen).unwrap().as_secs() > 15
     {
         if desire_to_broadcast.load(Ordering::Relaxed) {
             println!("There has been 15 seconds of silence!");
@@ -339,10 +317,7 @@ fn handle_samples<T>(
     sender.broadcast(input.to_vec());
 }
 
-fn calculate_rms_levels<T>(data: &[T], channels: usize) -> (f32, f32)
-where
-    T: cpal::Sample,
-{
+fn calculate_rms_levels<T>(data: &[T], channels: usize) -> (f32, f32) where T: cpal::Sample {
     let mut left_sum = 0.0;
     let mut right_sum = 0.0;
     let mut left_count = 0;
@@ -359,22 +334,14 @@ where
         }
     }
 
-    let left_rms = (left_sum / left_count as f32).sqrt();
-    let right_rms = (right_sum / right_count as f32).sqrt();
+    let left_rms = (left_sum / (left_count as f32)).sqrt();
+    let right_rms = (right_sum / (right_count as f32)).sqrt();
 
     // Convert to decibels
     let min_db = -60.0;
-    let left_db = if left_rms > 0.0 {
-        20.0 * left_rms.log10()
-    } else {
-        min_db
-    };
+    let left_db = if left_rms > 0.0 { 20.0 * left_rms.log10() } else { min_db };
 
-    let right_db = if right_rms > 0.0 {
-        20.0 * right_rms.log10()
-    } else {
-        min_db
-    };
+    let right_db = if right_rms > 0.0 { 20.0 * right_rms.log10() } else { min_db };
 
     (left_db, right_db)
 }
@@ -388,14 +355,14 @@ mod test {
         frequency: f64,
         sample_rate: u32,
         duration: f64,
-        amplitude: i16,
+        amplitude: i16
     ) -> Vec<i16> {
-        let num_samples = (sample_rate as f64 * duration) as usize;
+        let num_samples = ((sample_rate as f64) * duration) as usize;
         let mut samples = Vec::with_capacity(num_samples);
 
         for n in 0..num_samples {
-            let t = n as f64 / sample_rate as f64;
-            let sample_value = (amplitude as f64 * (2.0 * PI * frequency * t).sin()).round();
+            let t = (n as f64) / (sample_rate as f64);
+            let sample_value = ((amplitude as f64) * (2.0 * PI * frequency * t).sin()).round();
             samples.push(sample_value as i16);
         }
 

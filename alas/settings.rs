@@ -30,8 +30,8 @@ pub trait Settings {
         &self,
         connection: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-        >,
+            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
+        >
     ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
 
     /// AddConnection2 method
@@ -39,22 +39,24 @@ pub trait Settings {
         &self,
         settings: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
+            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
         >,
         flags: u32,
-        args: std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-    ) -> zbus::Result<(
-        zbus::zvariant::OwnedObjectPath,
-        std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
-    )>;
+        args: std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
+    ) -> zbus::Result<
+        (
+            zbus::zvariant::OwnedObjectPath,
+            std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
+        )
+    >;
 
     /// AddConnectionUnsaved method
     fn add_connection_unsaved(
         &self,
         connection: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-        >,
+            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
+        >
     ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
 
     /// GetConnectionByUuid method

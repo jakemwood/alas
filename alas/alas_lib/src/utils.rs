@@ -1,4 +1,4 @@
-use zbus::zvariant::{OwnedValue, Value};
+use zbus::zvariant::{ OwnedValue, Value };
 
 pub fn value_to_string(owned_value: OwnedValue) -> Result<String, String> {
     let value = Value::from(owned_value);

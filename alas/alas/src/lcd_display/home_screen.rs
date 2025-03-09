@@ -27,34 +27,27 @@ impl Screen for HomeScreen {
             port.write_all("N".as_bytes()).unwrap();
         }
         // // Draw left
-        port.write_all(&*matrix_orbital::set_cursor_bytes(1, 3))
-            .unwrap();
+        port.write_all(&*matrix_orbital::set_cursor_bytes(1, 3)).unwrap();
         port.write_all("L ".as_bytes()).unwrap();
 
-        port.write_all(&*matrix_orbital::set_cursor_bytes(1, 4))
-            .unwrap();
+        port.write_all(&*matrix_orbital::set_cursor_bytes(1, 4)).unwrap();
         port.write_all("R ".as_bytes()).unwrap();
 
-        port.write_all(&[254, 124, 3, 3, 0, self.left_volume])
-            .unwrap();
-        port.write_all(&[254, 124, 3, 4, 0, self.right_volume])
-            .unwrap();
+        port.write_all(&[254, 124, 3, 3, 0, self.left_volume]).unwrap();
+        port.write_all(&[254, 124, 3, 4, 0, self.right_volume]).unwrap();
     }
 
     fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
         // Do nothing!
         // Set the bar graph values
-        port.write_all(&[254, 124, 3, 3, 0, self.left_volume])
-            .unwrap();
-        port.write_all(&[254, 124, 3, 4, 0, self.right_volume])
-            .unwrap();
+        port.write_all(&[254, 124, 3, 3, 0, self.left_volume]).unwrap();
+        port.write_all(&[254, 124, 3, 4, 0, self.right_volume]).unwrap();
 
         // Draw Wi-Fi and cellular yes/no
         port.write_all(&*matrix_orbital::set_cursor_bytes(8, 2)).unwrap();
         if self.wifi_ready {
             port.write_all(b"Y").unwrap();
-        }
-        else {
+        } else {
             port.write_all(b"N").unwrap();
         }
         // println!("Left volume {:?} Right Volume {:?}", self.left_volume, self.right_volume);
@@ -71,31 +64,34 @@ impl Screen for HomeScreen {
 
     fn handle_message(&self, _: &UnsafeState, message: AlasMessage) -> Option<Box<dyn Screen>> {
         match message {
-            AlasMessage::VolumeChange {
-                left: left_db,
-                right: right_db,
-            } => {
+            AlasMessage::VolumeChange { left: left_db, right: right_db } => {
                 let left_scaled = scale_db_to_display(left_db);
                 let right_scaled = scale_db_to_display(right_db);
 
-                Some(Box::new(HomeScreen {
-                    wifi_ready: self.wifi_ready,
-                    cell_ready: self.cell_ready,
-                    left_volume: left_scaled,
-                    right_volume: right_scaled,
-                }))
+                Some(
+                    Box::new(HomeScreen {
+                        wifi_ready: self.wifi_ready,
+                        cell_ready: self.cell_ready,
+                        left_volume: left_scaled,
+                        right_volume: right_scaled,
+                    })
+                )
             }
             AlasMessage::NetworkStatusChange { new_state } => {
                 if new_state == AlasWiFiState::Connected {
-                    Some(Box::new(HomeScreen {
-                        wifi_ready: true,
-                        ..*self
-                    }))
+                    Some(
+                        Box::new(HomeScreen {
+                            wifi_ready: true,
+                            ..*self
+                        })
+                    )
                 } else {
-                    Some(Box::new(HomeScreen {
-                        wifi_ready: false,
-                        ..*self
-                    }))
+                    Some(
+                        Box::new(HomeScreen {
+                            wifi_ready: false,
+                            ..*self
+                        })
+                    )
                 }
             }
             _ => None,

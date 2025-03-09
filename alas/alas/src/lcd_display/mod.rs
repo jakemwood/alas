@@ -4,15 +4,15 @@ use alas_lib::state::AlasState;
 use alas_lib::state::SafeState;
 use menu_screen::MenuScreen;
 use screen::Screen;
-use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
+use serialport::{ DataBits, FlowControl, Parity, SerialPort, StopBits };
 use std::any::Any;
-use std::io::{self, Read, Write};
+use std::io::{ self, Read, Write };
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use tokio::{select, signal, task};
+use tokio::{ select, signal, task };
 use udev::Enumerator;
 
 mod home_screen;
@@ -29,7 +29,7 @@ async fn handle_message(
     current_state: DisplayState,
     app_state: &SafeState,
     message: AlasMessage,
-    write_port: &mut Box<dyn SerialPort>,
+    write_port: &mut Box<dyn SerialPort>
 ) {
     // Some messages are not screen-specific. Handle those here.
     match message {
@@ -97,7 +97,7 @@ async fn handle_button(
     display_state: DisplayState,
     app_state: &SafeState,
     button_pressed: u8,
-    port: &mut Box<dyn SerialPort>,
+    port: &mut Box<dyn SerialPort>
 ) {
     println!("Button pressed: {:?}", button_pressed);
     let mut screen = display_state.write().await;
@@ -129,7 +129,7 @@ fn find_port_name() -> Option<String> {
                     // Check the device property for the vendor name
                     if let Some(vendor) = device.property_value("ID_VENDOR") {
                         if vendor.to_str() == Some("MO") {
-                            return Some(devnode_str.to_string())
+                            return Some(devnode_str.to_string());
                         }
                     }
                 }
@@ -146,7 +146,8 @@ fn connect() -> Box<dyn SerialPort> {
     let port_name = find_port_name().expect("Could not find serial port");
     let baud_rate = 19200;
 
-    serialport::new(port_name, baud_rate)
+    serialport
+        ::new(port_name, baud_rate)
         .data_bits(DataBits::Eight)
         .parity(Parity::None)
         .stop_bits(StopBits::One)
@@ -160,7 +161,7 @@ type DisplayState = Arc<RwLock<Box<dyn Screen>>>;
 
 pub async fn start(
     mut lcd_rx: Receiver<AlasMessage>,
-    shared_state: &SafeState,
+    shared_state: &SafeState
 ) -> (JoinHandle<()>, JoinHandle<()>) {
     let mut display_state: DisplayState = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
 
@@ -200,9 +201,7 @@ pub async fn start(
         write_port.write_all(&[254, 86, 5]).unwrap(); // turn off gpio leds
         write_port.write_all(&[254, 86, 3]).unwrap(); // turn off gpio leds
         clear_screen(&mut write_port).unwrap();
-        write_port
-            .write_all("Software shutdown...".as_bytes())
-            .unwrap();
+        write_port.write_all("Software shutdown...".as_bytes()).unwrap();
     });
 
     // This task is responsible for reading from the USB serial and responding to
@@ -212,9 +211,7 @@ pub async fn start(
     let mut read_port = port.try_clone().expect("Could not create read port");
     let lcd_reader = task::spawn(async move {
         loop {
-            let mut loop_port = read_port
-                .try_clone()
-                .expect("Could not create response port");
+            let mut loop_port = read_port.try_clone().expect("Could not create response port");
             // let mut response_port = read_port.try_clone().expect("Could not create response port");
             select! {
                 result = task::spawn_blocking(move || {
@@ -247,7 +244,7 @@ pub async fn start(
 
     // Now that everything is started, send the first screen
     matrix_orbital::set_brightness(&mut port, 0.5).expect("Could not set brightness"); // Set brightness to 50%
-                                                                                       // Initialize the horizontal bar graphs (page 22 of the LCD manual)
+    // Initialize the horizontal bar graphs (page 22 of the LCD manual)
     port.write_all(&[254, 66, 0]).unwrap(); // turn on display
     port.write_all(&[254, 104]).unwrap(); // load horizontal bars
 

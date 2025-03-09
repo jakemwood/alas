@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use zbus::proxy;
-use zbus::zvariant::{ObjectPath, OwnedValue};
+use zbus::zvariant::{ ObjectPath, OwnedValue };
 
 #[proxy(
     interface = "org.freedesktop.ModemManager1.Modem.Modem3gpp",

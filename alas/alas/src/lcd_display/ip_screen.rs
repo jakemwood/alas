@@ -1,4 +1,4 @@
-use crate::lcd_display::matrix_orbital::{BOTTOM_LEFT_BUTTON, TOP_LEFT_BUTTON};
+use crate::lcd_display::matrix_orbital::{ BOTTOM_LEFT_BUTTON, TOP_LEFT_BUTTON };
 use crate::lcd_display::menu_screen::MenuScreen;
 use crate::lcd_display::screen::Screen;
 use alas_lib::state::AlasMessage;
@@ -19,7 +19,7 @@ impl Screen for IPScreen {
                             port.write_all(ip.to_string().as_bytes()).unwrap();
                             port.write_all("\r\n".as_bytes()).unwrap();
                             println!("Interface: {}, IP: {}", iface.name, ip);
-                        },
+                        }
                         IpAddr::V6(ip) => {
                             println!("IPV6 interface: {}, {}", iface.name, ip);
                         }
@@ -33,8 +33,7 @@ impl Screen for IPScreen {
         }
     }
 
-    fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {
-    }
+    fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {}
 
     fn handle_button(&self, _: &UnsafeState, button: u8) -> Option<Box<dyn Screen>> {
         match button {

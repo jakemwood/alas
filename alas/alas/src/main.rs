@@ -3,13 +3,13 @@ mod web_server;
 
 use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
-use alas_lib::wifi::{WiFiObserver};
+use alas_lib::wifi::{ WiFiObserver };
 use serialport::SerialPort;
 use std::io::Write;
 use std::sync::Arc;
 use tokio;
 use tokio::signal;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{ broadcast, RwLock };
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +24,7 @@ async fn main() {
     let wifi_changes = wifi_observer.listen().await;
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state);
-    let web_server = web_server::run_rocket_server(event_bus.clone()).await;
+    let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
 
     // Wait for exit here! All code below is for clean-up!
 

@@ -48,8 +48,7 @@ pub fn clear_screen(port: &mut Box<dyn SerialPort>) -> io::Result<()> {
 
 fn reset_screen(port: &mut Box<dyn SerialPort>) -> io::Result<()> {
     clear_screen(port).expect("Could not clear the screen");
-    port.write_all("88.7 RIDGELINE V2".as_bytes())
-        .expect("could not write to screen");
+    port.write_all("88.7 RIDGELINE V2".as_bytes()).expect("could not write to screen");
     Ok(())
 }
 

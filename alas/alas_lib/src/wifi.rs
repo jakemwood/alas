@@ -1,6 +1,10 @@
 use crate::network_manager::get_all_devices;
 use crate::network_manager::{
-    AccessPointProxy, ActiveConnectionProxy, DeviceProxy, NetworkManagerProxy, StateChangedArgs,
+    AccessPointProxy,
+    ActiveConnectionProxy,
+    DeviceProxy,
+    NetworkManagerProxy,
+    StateChangedArgs,
     WiFiDeviceProxy,
 };
 use crate::state::AlasMessage;
@@ -10,10 +14,10 @@ use std::sync::Arc;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use tokio::{select, signal};
+use tokio::{ select, signal };
 use uuid::Uuid;
 use zbus::export::futures_util::StreamExt;
-use zbus::zvariant::{ObjectPath, OwnedObjectPath, Value};
+use zbus::zvariant::{ ObjectPath, OwnedObjectPath, Value };
 use zbus::Connection;
 
 const ALAS_CONFIG_HOTSPOT_NAME: &str = "Alas Config";
@@ -27,9 +31,7 @@ async fn find_wifi_device_path(conn: &Connection) -> Option<OwnedObjectPath> {
     let all_devices = get_all_devices(&conn).await;
 
     for device_path in all_devices {
-        let device_proxy = DeviceProxy::new(conn, device_path.clone())
-            .await
-            .expect("No proxy");
+        let device_proxy = DeviceProxy::new(conn, device_path.clone()).await.expect("No proxy");
         let device_type = device_proxy.device_type().await.expect("No type");
 
         if device_type == WIFI {
@@ -42,32 +44,26 @@ async fn find_wifi_device_path(conn: &Connection) -> Option<OwnedObjectPath> {
 
 /// Get a Z-bus proxy for working with the Wi-Fi device
 async fn find_wifi_device(conn: &Connection) -> WiFiDeviceProxy {
-    let path = find_wifi_device_path(&conn)
-        .await
-        .expect("Could not find Wi-Fi device");
-    WiFiDeviceProxy::new(conn, path)
-        .await
-        .expect("No WiFi device proxy")
+    let path = find_wifi_device_path(&conn).await.expect("Could not find Wi-Fi device");
+    WiFiDeviceProxy::new(conn, path).await.expect("No WiFi device proxy")
 }
 
 /// Get a Z-bux proxy for working with the Device (with a capital "D") that is responsible for Wi-Fi
 async fn get_wifi_device_as_device(conn: &Connection) -> DeviceProxy {
-    let path = find_wifi_device_path(&conn)
-        .await
-        .expect("Could not find Wi-Fi device");
-    DeviceProxy::new(conn, path)
-        .await
-        .expect("No DeviceProxy for Wi-Fi")
+    let path = find_wifi_device_path(&conn).await.expect("Could not find Wi-Fi device");
+    DeviceProxy::new(conn, path).await.expect("No DeviceProxy for Wi-Fi")
 }
 
-async fn access_point_to_wifi_network(conn: &Connection, access_point_path: OwnedObjectPath) -> WiFiNetwork {
-    let app = AccessPointProxy::new(&conn, access_point_path.clone())
-        .await
-        .expect("No proxy");
-    let ssid =
-        String::from_utf8(app.ssid().await.expect("No ssid")).expect("Could not convert SSID");
+async fn access_point_to_wifi_network(
+    conn: &Connection,
+    access_point_path: OwnedObjectPath
+) -> WiFiNetwork {
+    let app = AccessPointProxy::new(&conn, access_point_path.clone()).await.expect("No proxy");
+    let ssid = String::from_utf8(app.ssid().await.expect("No ssid")).expect(
+        "Could not convert SSID"
+    );
 
-    let security = if app.rsn_flags().await.expect("No security") & 0x100 != 0 {
+    let security = if (app.rsn_flags().await.expect("No security") & 0x100) != 0 {
         "wpa"
     } else {
         "none"
@@ -85,7 +81,7 @@ async fn access_point_to_wifi_network(conn: &Connection, access_point_path: Owne
 /// Given a list of paths to Access Points, load the data into a structure that we like
 async fn load_access_points(
     conn: &Connection,
-    all_access_points: Vec<OwnedObjectPath>,
+    all_access_points: Vec<OwnedObjectPath>
 ) -> Vec<WiFiNetwork> {
     let mut results: Vec<WiFiNetwork> = Vec::new();
     for access_point in all_access_points {
@@ -105,7 +101,7 @@ async fn create_wifi_hotspot(conn: &Connection) {
     wireless.insert("ssid", ALAS_CONFIG_HOTSPOT_NAME.as_bytes().into());
     wireless.insert("mode", "ap".into());
     wireless.insert("band", "bg".into());
-    wireless.insert("channel", 6u32.into()); // Choose an appropriate channel
+    wireless.insert("channel", (6u32).into()); // Choose an appropriate channel
 
     let mut ipv4: HashMap<&str, Value> = HashMap::new();
     ipv4.insert("method", "shared".into());
@@ -122,10 +118,8 @@ async fn create_wifi_hotspot(conn: &Connection) {
     nmp.add_and_activate_connection(
         connection_info,
         &wifi_device_path,
-        &ObjectPath::from_str_unchecked("/"),
-    )
-    .await
-    .expect("No add_connection");
+        &ObjectPath::from_str_unchecked("/")
+    ).await.expect("No add_connection");
 }
 
 /// Connect to a Wi-fi access point
@@ -133,11 +127,11 @@ async fn connect_to_wifi(
     conn: &Connection,
     wifi_device: OwnedObjectPath,
     access_point_path: String,
-    password: Option<String>,
+    password: Option<String>
 ) {
-    let access_point = AccessPointProxy::new(&conn, access_point_path)
-        .await
-        .expect("No access path by this name");
+    let access_point = AccessPointProxy::new(&conn, access_point_path).await.expect(
+        "No access path by this name"
+    );
     let ssid_bytes = access_point.ssid().await.expect("No SSID");
     let ssid = String::from_utf8(ssid_bytes.clone()).unwrap();
 
@@ -176,9 +170,11 @@ async fn connect_to_wifi(
 
     disconnect_wifi(&conn).await;
 
-    nmp.add_and_activate_connection(connection_info, &wifi_device, access_point.inner().path())
-        .await
-        .expect("No add_connection");
+    nmp.add_and_activate_connection(
+        connection_info,
+        &wifi_device,
+        access_point.inner().path()
+    ).await.expect("No add_connection");
 }
 
 /// Disconnect the current Wi-Fi. This will either disconnect from an
@@ -189,13 +185,11 @@ async fn disconnect_wifi(conn: &Connection) {
     let active_connections = nmp.active_connections().await.expect("No connections");
 
     for connection in active_connections {
-        let active_connection = ActiveConnectionProxy::new(&conn, connection.clone())
-            .await
-            .expect("No proxy");
+        let active_connection = ActiveConnectionProxy::new(&conn, connection.clone()).await.expect(
+            "No proxy"
+        );
         if active_connection.type_().await.unwrap() == "802-11-wireless" {
-            nmp.deactivate_connection(&connection)
-                .await
-                .expect("no deactivation");
+            nmp.deactivate_connection(&connection).await.expect("no deactivation");
             return;
         }
     }
@@ -217,34 +211,22 @@ pub struct WiFiNetwork {
 
 /// Get a list of Wi-Fi networks
 pub async fn get_wifi_networks() -> Vec<WiFiNetwork> {
-    let conn = Connection::system()
-        .await
-        .expect("Could not connect to D-bus");
+    let conn = Connection::system().await.expect("Could not connect to D-bus");
     let wifi_device = find_wifi_device(&conn).await;
-    wifi_device
-        .request_scan(HashMap::new())
-        .await
-        .expect("did not scan");
-    let raw_access_points = wifi_device
-        .get_all_access_points()
-        .await
-        .expect("Needs access points");
+    wifi_device.request_scan(HashMap::new()).await.expect("did not scan");
+    let raw_access_points = wifi_device.get_all_access_points().await.expect("Needs access points");
     load_access_points(&conn, raw_access_points.clone()).await
 }
 
 /// Join a Wi-Fi network, given an Access Point Path and the password, if necessary.
 pub async fn join_wifi(path: String, password: Option<String>) {
-    let conn = Connection::system()
-        .await
-        .expect("Could not connect to D-bus");
+    let conn = Connection::system().await.expect("Could not connect to D-bus");
     let wifi_device_path = find_wifi_device_path(&conn).await.expect("No Wi-Fi");
     connect_to_wifi(&conn, wifi_device_path, path, password).await;
 }
 
 pub async fn create_config_hotspot() {
-    let conn = Connection::system()
-        .await
-        .expect("Could not connect to D-bus");
+    let conn = Connection::system().await.expect("Could not connect to D-bus");
     create_wifi_hotspot(&conn).await;
 }
 
@@ -261,7 +243,7 @@ pub enum AlasWiFiState {
 /// WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
 pub struct WiFiObserver {
     pub state: RwLock<Option<AlasWiFiState>>,
-    pub sender: Sender<AlasMessage>
+    pub sender: Sender<AlasMessage>,
 }
 
 impl WiFiObserver {
@@ -279,13 +261,13 @@ impl WiFiObserver {
         tokio::spawn(async move {
             let connection = Connection::system().await.expect("Could not get bus");
 
-            let wifi_device_path = find_wifi_device_path(&connection)
-                .await
-                .expect("Did not find Wi-Fi device path");
+            let wifi_device_path = find_wifi_device_path(&connection).await.expect(
+                "Did not find Wi-Fi device path"
+            );
 
-            let device_proxy = DeviceProxy::new(&connection, wifi_device_path)
-                .await
-                .expect("no device proxy");
+            let device_proxy = DeviceProxy::new(&connection, wifi_device_path).await.expect(
+                "no device proxy"
+            );
 
             // Pull the state and initialize our local state copy
             let current_state = WiFiObserver::get_current_wifi_state().await;
@@ -294,8 +276,7 @@ impl WiFiObserver {
             }
 
             let mut state_change_stream = device_proxy
-                .receive_signal_state_changed()
-                .await
+                .receive_signal_state_changed().await
                 .expect("Could not start stream?");
 
             println!("Waiting for network changes...");
@@ -324,15 +305,9 @@ impl WiFiObserver {
                     AlasWiFiState::ConfigurationMode
                 } else {
                     match new_state {
-                        100 => {
-                            AlasWiFiState::Connected
-                        },
-                        40..100 => {
-                            AlasWiFiState::Connecting
-                        },
-                        _ => {
-                            AlasWiFiState::Disconnected
-                        }
+                        100 => { AlasWiFiState::Connected }
+                        40..100 => { AlasWiFiState::Connecting }
+                        _ => { AlasWiFiState::Disconnected }
                     }
                 }
             };
@@ -341,8 +316,7 @@ impl WiFiObserver {
             let _ = self.sender.send(AlasMessage::NetworkStatusChange {
                 new_state,
             });
-        }
-        else {
+        } else {
             println!("We don't know anything about the new WiFi at this stage...");
         }
     }
@@ -354,16 +328,14 @@ impl WiFiObserver {
         match access_point {
             Ok(access_point_path) => {
                 Some(access_point_to_wifi_network(&conn, access_point_path).await)
-            },
+            }
             Err(_) => None,
         }
     }
 
     async fn get_current_wifi_state() -> Option<u32> {
         println!("getting current state!");
-        let conn = Connection::system()
-                    .await
-                    .expect("Could not connect to D-bus");
+        let conn = Connection::system().await.expect("Could not connect to D-bus");
         let wifi_device = get_wifi_device_as_device(&conn).await;
         match wifi_device.state().await {
             Ok(state) => { Some(state) }

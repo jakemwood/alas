@@ -1,7 +1,12 @@
 use crate::lcd_display::home_screen::HomeScreen;
 use crate::lcd_display::ip_screen::IPScreen;
 use crate::lcd_display::matrix_orbital::{
-    clear_screen, BOTTOM_LEFT_BUTTON, CENTER_BUTTON, DOWN_BUTTON, SCREEN_HEIGHT, TOP_LEFT_BUTTON,
+    clear_screen,
+    BOTTOM_LEFT_BUTTON,
+    CENTER_BUTTON,
+    DOWN_BUTTON,
+    SCREEN_HEIGHT,
+    TOP_LEFT_BUTTON,
     UP_BUTTON,
 };
 use crate::lcd_display::screen::Screen;
@@ -10,7 +15,7 @@ use alas_lib::state::UnsafeState;
 use alas_lib::wifi::create_config_hotspot;
 use serialport::SerialPort;
 use std::any::Any;
-use std::cmp::{max, min};
+use std::cmp::{ max, min };
 use std::io::Write;
 use tokio::runtime::Handle;
 use tokio::task;
@@ -36,12 +41,9 @@ impl Screen for MenuScreen {
         let mut bytes_to_write: Vec<u8> = Vec::new();
 
         // Starting at start_idx, write them out!
-        let destination = min(
-            MENU_OPTIONS.len(),
-            (self.start_idx + SCREEN_HEIGHT) as usize,
-        );
+        let destination = min(MENU_OPTIONS.len(), (self.start_idx + SCREEN_HEIGHT) as usize);
         for i in self.start_idx as usize..destination {
-            if self.current == i as u8 {
+            if self.current == (i as u8) {
                 bytes_to_write.extend(b"* ");
             } else {
                 bytes_to_write.extend(b"  ");
@@ -66,12 +68,7 @@ impl Screen for MenuScreen {
         match button {
             UP_BUTTON => {
                 let next_value = {
-                    if self.current > 0 {
-                        self.current - 1
-                    }
-                    else {
-                        0
-                    }
+                    if self.current > 0 { self.current - 1 } else { 0 }
                 };
                 let mut start_idx = self.start_idx;
 
@@ -79,13 +76,15 @@ impl Screen for MenuScreen {
                     start_idx = next_value;
                 }
 
-                Some(Box::new(MenuScreen {
-                    current: next_value,
-                    start_idx,
-                }))
+                Some(
+                    Box::new(MenuScreen {
+                        current: next_value,
+                        start_idx,
+                    })
+                )
             }
             DOWN_BUTTON => {
-                let next_value = min(self.current + 1, MENU_OPTIONS.len() as u8 - 1);
+                let next_value = min(self.current + 1, (MENU_OPTIONS.len() as u8) - 1);
                 let mut start_idx = self.start_idx;
 
                 // If the next_value has scrolled out of view, adjust.
@@ -93,10 +92,12 @@ impl Screen for MenuScreen {
                     start_idx += 1;
                 }
 
-                Some(Box::new(MenuScreen {
-                    current: next_value,
-                    start_idx,
-                }))
+                Some(
+                    Box::new(MenuScreen {
+                        current: next_value,
+                        start_idx,
+                    })
+                )
             }
             CENTER_BUTTON => {
                 match self.current {

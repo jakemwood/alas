@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use zbus::zvariant::{OwnedObjectPath, Value};
-use zbus::{proxy, Connection, Result};
+use zbus::zvariant::{ OwnedObjectPath, Value };
+use zbus::{ proxy, Connection, Result };
 
 #[proxy(
     default_service = "org.freedesktop.NetworkManager",
@@ -19,15 +19,15 @@ pub trait NetworkManager {
         &self,
         connection: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
+            std::collections::HashMap<&str, zbus::zvariant::Value<'_>>
         >,
         device: &zbus::zvariant::ObjectPath<'_>,
-        specific_object: &zbus::zvariant::ObjectPath<'_>,
+        specific_object: &zbus::zvariant::ObjectPath<'_>
     ) -> Result<(OwnedObjectPath, OwnedObjectPath)>;
 
     fn deactivate_connection(
         &self,
-        active_connection: &zbus::zvariant::ObjectPath<'_>,
+        active_connection: &zbus::zvariant::ObjectPath<'_>
     ) -> Result<()>;
 }
 
@@ -144,8 +144,8 @@ pub trait Settings {
         &self,
         connection: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
-        >,
+            std::collections::HashMap<&str, zbus::zvariant::Value<'_>>
+        >
     ) -> Result<OwnedObjectPath>;
 
     /// AddConnection2 method
@@ -153,22 +153,19 @@ pub trait Settings {
         &self,
         settings: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
+            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
         >,
         flags: u32,
-        args: std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-    ) -> Result<(
-        OwnedObjectPath,
-        std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
-    )>;
+        args: std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
+    ) -> Result<(OwnedObjectPath, std::collections::HashMap<String, zbus::zvariant::OwnedValue>)>;
 
     /// AddConnectionUnsaved method
     fn add_connection_unsaved(
         &self,
         connection: std::collections::HashMap<
             &str,
-            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>,
-        >,
+            std::collections::HashMap<&str, &zbus::zvariant::Value<'_>>
+        >
     ) -> Result<OwnedObjectPath>;
 
     /// GetConnectionByUuid method
