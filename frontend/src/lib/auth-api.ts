@@ -14,19 +14,4 @@ export const authApi = {
     
     return response.json();
   },
-
-  async updatePassword(currentPassword: string, newPassword: string) {
-    throw new Error("Not implemented");
-    // const response = await fetch(`http://${credentials.ipAddress}/auth/password`, {
-    //   method: 'PUT',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ currentPassword, newPassword }),
-    // });
-
-    // if (!response.ok) {
-    //   throw new Error('Failed to update password');
-    // }
-
-    // return response.json();
-  },
 };

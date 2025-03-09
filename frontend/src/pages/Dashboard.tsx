@@ -15,6 +15,18 @@ export function Dashboard() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    api.getNetworkConfig().then(response => {
+      updateSystemStatus({
+        network: {
+          wifiConnected: response.wifi_connected,
+          cellularConnected: response.cell_connected,
+          signalStrength: 100,
+        }
+      })
+    });
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div className="bg-white p-6 rounded-lg shadow-md">

@@ -199,16 +199,18 @@ async fn change_password(request: Json<ChangePasswordRequest>) -> Result<Status,
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
-struct WifiStatus {
-    connected: bool,
+struct NetworkStatus {
+    wifi_connected: bool,
+    cell_connected: bool,
 }
 
-#[get("/wifi/status")]
-async fn current_wifi_status(alas_state: &State<SafeState>) -> Json<WifiStatus> {
+#[get("/network")]
+async fn get_network_status(alas_state: &State<SafeState>) -> Json<NetworkStatus> {
     let state = alas_state.read().await;
 
-    Json(WifiStatus {
-        connected: state.wifi_on,
+    Json(NetworkStatus {
+        wifi_connected: state.wifi_on,
+        cell_connected: state.cell_on,
     })
 }
 
@@ -306,7 +308,7 @@ fn rocket(bus: Sender<AlasMessage>, alas_state: SafeState) -> Rocket<Build> {
                 volume,
                 login,
                 change_password,
-                current_wifi_status
+                get_network_status,
             ]
         )
         .mount("/null", routes![do_null])

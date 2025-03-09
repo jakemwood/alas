@@ -11,9 +11,9 @@ import { Settings } from './pages/Settings';
 import { makeServer } from './lib/mock-server';
 
 // @ts-ignore
-if (process.env.NODE_ENV === 'development') {
-  makeServer();
-}
+// if (process.env.NODE_ENV === 'development') {
+//   makeServer();
+// }
 
 export default function App() {
   return (

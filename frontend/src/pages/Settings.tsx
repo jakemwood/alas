@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { authApi } from '../lib/auth-api';
+import { useApi } from '../lib/api';
 
 export function Settings() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -8,6 +8,7 @@ export function Settings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const api = useApi();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +23,9 @@ export function Settings() {
     setIsLoading(true);
 
     try {
-      await authApi.updatePassword(currentPassword, newPassword);
+      await api.updatePassword(currentPassword, newPassword);
       setSuccess('Password updated successfully');
+      setError('');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');

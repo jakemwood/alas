@@ -46,6 +46,18 @@ export function useApi() {
       return res.json();
     },
 
+    async updatePassword(currentPassword: string, newPassword: string) {
+      const response = await fetch(`${API_BASE}/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ old_password: currentPassword, new_password: newPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update password');
+      }
+    },
+
     subscribeToVolumeUpdates(callback: (volume: number) => void) {
       const eventSource = new EventSource(`${API_BASE}/audio/volume`);
       eventSource.onmessage = (event) => {
