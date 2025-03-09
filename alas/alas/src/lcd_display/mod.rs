@@ -13,6 +13,7 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::{select, signal, task};
+use udev::Enumerator;
 
 mod home_screen;
 mod ip_screen;
@@ -115,9 +116,34 @@ async fn handle_button(
     }
 }
 
+fn find_port_name() -> Option<String> {
+    let mut enumerator = Enumerator::new().ok().expect("Failed to create enumerator");
+    enumerator.match_subsystem("tty").ok().expect("Failed to match");
+
+    // Iterate over each device
+    for device in enumerator.scan_devices().ok().expect("Failed to scan devices") {
+        // Check if the device node exists and starts with "/dev/ttyUSB"
+        if let Some(devnode) = device.devnode() {
+            if let Some(devnode_str) = devnode.to_str() {
+                if devnode_str.starts_with("/dev/ttyUSB") {
+                    // Check the device property for the vendor name
+                    if let Some(vendor) = device.property_value("ID_VENDOR") {
+                        if vendor.to_str() == Some("MO") {
+                            return Some(devnode_str.to_string())
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 fn connect() -> Box<dyn SerialPort> {
     println!("Connecting to the serial port...");
-    let port_name = "/dev/ttyUSB0"; // Replace with your port
+
+    let port_name = find_port_name().expect("Could not find serial port");
     let baud_rate = 19200;
 
     serialport::new(port_name, baud_rate)
