@@ -254,7 +254,7 @@ impl WiFiObserver {
         }
     }
 
-    pub async fn listen(self: Arc<Self>) -> JoinHandle<()> {
+    pub fn listen(self: Arc<Self>) -> JoinHandle<()> {
         let sender = self.sender.clone();
         let cloned_self = self.clone();
 

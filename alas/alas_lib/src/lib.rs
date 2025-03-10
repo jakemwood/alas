@@ -5,6 +5,7 @@ mod network_manager;
 pub mod state;
 mod utils;
 pub mod wifi;
+pub mod cellular;
 
 use crate::modem_manager::ModemSimpleProxy;
 use zbus::Connection;

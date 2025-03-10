@@ -14,6 +14,7 @@ use crate::wifi::AlasWiFiState;
 pub struct AlasState {
     pub wifi_on: bool,
     pub cell_on: bool,
+    pub cell_strength: u32,
     pub is_streaming: bool,
     pub is_recording: bool,
     pub is_audio_present: bool,
@@ -26,6 +27,7 @@ impl AlasState {
         AlasState {
             wifi_on: true,
             cell_on: false,
+            cell_strength: 0,
             is_streaming: false,
             is_recording: false,
             is_audio_present: false,
@@ -38,6 +40,7 @@ impl AlasState {
         AlasState {
             wifi_on: true,
             cell_on: false,
+            cell_strength: 67,
             is_streaming: false,
             is_recording: false,
             is_audio_present: false,
@@ -70,6 +73,10 @@ pub enum AlasMessage {
     Exit,
     NetworkStatusChange {
         new_state: AlasWiFiState,
+    },
+    CellularStatusChange {
+        new_state: AlasWiFiState,
+        cellular_strength: u32,
     },
     Ticker {
         count: u32,

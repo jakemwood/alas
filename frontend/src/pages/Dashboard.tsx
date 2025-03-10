@@ -21,7 +21,7 @@ export function Dashboard() {
         network: {
           wifiConnected: response.wifi_connected,
           cellularConnected: response.cell_connected,
-          signalStrength: 100,
+          signalStrength: response.cell_strength,
         }
       })
     });

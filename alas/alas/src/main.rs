@@ -4,6 +4,7 @@ mod web_server;
 use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
 use alas_lib::wifi::{ WiFiObserver };
+use alas_lib::cellular::{ connect_to_cellular, CellObserver };
 use serialport::SerialPort;
 use std::io::Write;
 use std::sync::Arc;
@@ -13,15 +14,18 @@ use tokio::sync::{ broadcast, RwLock };
 
 #[tokio::main]
 async fn main() {
-    // TODO: consider refactoring to something Redux-like
     let state = Arc::new(RwLock::new(AlasState::new()));
     let (event_bus, _) = broadcast::channel::<AlasMessage>(256);
+
+    let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
+    let cell_changes = cell_observer.listen().await;
+    // TODO: consider refactoring to something Redux-like
 
     let lcd_rx = event_bus.subscribe();
     let (lcd_rx_thread, lcd_tx_thread) = lcd_display::start(lcd_rx, &state).await;
 
     let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
-    let wifi_changes = wifi_observer.listen().await;
+    let wifi_changes = wifi_observer.listen();
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state);
     let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
@@ -39,7 +43,7 @@ async fn main() {
 
     // LCD should always be last to exit so that we can display all messages
     println!("Waiting for web server to await...");
-    web_server.await;
+    let _ = web_server.await.unwrap();
     println!("Waiting for lcd rx to unwrap...");
     lcd_rx_thread.await.unwrap();
     println!("Waiting for lcd tx to unwrap...");

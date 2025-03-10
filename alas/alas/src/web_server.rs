@@ -202,6 +202,7 @@ async fn change_password(request: Json<ChangePasswordRequest>) -> Result<Status,
 struct NetworkStatus {
     wifi_connected: bool,
     cell_connected: bool,
+    cell_strength: u32,
 }
 
 #[get("/network")]
@@ -211,6 +212,7 @@ async fn get_network_status(alas_state: &State<SafeState>) -> Json<NetworkStatus
     Json(NetworkStatus {
         wifi_connected: state.wifi_on,
         cell_connected: state.cell_on,
+        cell_strength: state.cell_strength,
     })
 }
 
@@ -308,7 +310,7 @@ fn rocket(bus: Sender<AlasMessage>, alas_state: SafeState) -> Rocket<Build> {
                 volume,
                 login,
                 change_password,
-                get_network_status,
+                get_network_status
             ]
         )
         .mount("/null", routes![do_null])
