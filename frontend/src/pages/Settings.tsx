@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import { useApi } from '../lib/api';
+import React, { useState } from "react";
+import { useApi } from "../lib/api";
 
 export function Settings() {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const api = useApi();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (newPassword !== confirmPassword) {
-      setError('New passwords do not match');
+      setError("New passwords do not match");
       return;
     }
 
@@ -24,13 +24,13 @@ export function Settings() {
 
     try {
       await api.updatePassword(currentPassword, newPassword);
-      setSuccess('Password updated successfully');
-      setError('');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setSuccess("Password updated successfully");
+      setError("");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err) {
-      setError('Failed to update password');
+      setError("Failed to update password");
     } finally {
       setIsLoading(false);
     }
@@ -38,16 +38,15 @@ export function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-lg shadow-md space-y-6"
+      >
         <h2 className="text-lg font-semibold mb-4">Change Password</h2>
 
-        {error && (
-          <div className="text-red-500 text-sm">{error}</div>
-        )}
+        {error && <div className="text-red-500 text-sm">{error}</div>}
 
-        {success && (
-          <div className="text-green-500 text-sm">{success}</div>
-        )}
+        {success && <div className="text-green-500 text-sm">{success}</div>}
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -94,7 +93,7 @@ export function Settings() {
             disabled={isLoading}
             className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
-            {isLoading ? 'Updating...' : 'Update Password'}
+            {isLoading ? "Updating..." : "Update Password"}
           </button>
         </div>
       </form>

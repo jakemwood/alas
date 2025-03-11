@@ -36,7 +36,13 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rocket::futures::TryFutureExt;
 use rocket_cors::AllowedOrigins;
-use alas_lib::config::{ load_config, save_config, AlasAuthenticationConfig, AlasConfig };
+use alas_lib::config::{
+    load_config,
+    save_config,
+    AlasAuthenticationConfig,
+    AlasConfig,
+    AlasIcecastConfig,
+};
 
 #[get("/")]
 pub async fn index() -> io::Result<NamedFile> {
@@ -216,6 +222,21 @@ async fn get_network_status(alas_state: &State<SafeState>) -> Json<NetworkStatus
     })
 }
 
+#[get("/icecast")]
+async fn get_icecast_config() -> Json<AlasIcecastConfig> {
+    let config = load_config();
+    Json(config.icecast)
+}
+
+#[post("/icecast", format = "json", data = "<request>")]
+async fn set_icecast_config(request: Json<AlasIcecastConfig>, bus: &State<Sender<AlasMessage>>) -> Json<AlasIcecastConfig> {
+    let mut config = load_config().clone();
+    config.icecast = request.into_inner();
+    save_config(&config);
+    bus.send(AlasMessage::StreamingConfigUpdated).await;
+    Json(config.icecast)
+}
+
 #[derive(Serialize)]
 struct WiFiNetworks {
     networks: Vec<WiFiNetwork>,
@@ -310,7 +331,9 @@ fn rocket(bus: Sender<AlasMessage>, alas_state: SafeState) -> Rocket<Build> {
                 volume,
                 login,
                 change_password,
-                get_network_status
+                get_network_status,
+                get_icecast_config,
+                set_icecast_config
             ]
         )
         .mount("/null", routes![do_null])

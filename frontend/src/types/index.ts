@@ -20,6 +20,7 @@ export interface IcecastConfig {
   host: string;
   port: number;
   mountPoint: string;
+  password: string;
 }
 
 export interface SystemStatus {

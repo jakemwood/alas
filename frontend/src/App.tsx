@@ -1,14 +1,14 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { LoginForm } from './components/LoginForm';
-import { PrivateRoute } from './components/PrivateRoute';
-import { Dashboard } from './pages/Dashboard';
-import { Network } from './pages/Network';
-import { Audio } from './pages/Audio';
-import { Icecast } from './pages/Icecast';
-import { Settings } from './pages/Settings';
-import { makeServer } from './lib/mock-server';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { LoginForm } from "./components/LoginForm";
+import { PrivateRoute } from "./components/PrivateRoute";
+import { Dashboard } from "./pages/Dashboard";
+import { Network } from "./pages/Network";
+import { Audio } from "./pages/Audio";
+import { Icecast } from "./pages/Icecast";
+import { Settings } from "./pages/Settings";
+import { makeServer } from "./lib/mock-server";
 
 // @ts-ignore
 // if (process.env.NODE_ENV === 'development') {

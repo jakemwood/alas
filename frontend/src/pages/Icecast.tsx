@@ -1,23 +1,45 @@
-import React from 'react';
-import { useStore } from '../lib/store';
-import { useApi } from '../lib/api';
+import React, { useEffect } from "react";
+import { useStore } from "../lib/store";
+import { useApi } from "../lib/api";
 
 export function Icecast() {
   const { icecastConfig, setIcecastConfig } = useStore();
   const api = useApi();
 
+  useEffect(() => {
+    api.getIcecastConfig().then((response) => {
+      setIcecastConfig({
+        host: response.hostname,
+        port: response.port,
+        mountPoint: response.mount,
+        password: response.password,
+      });
+    });
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.updateIcecastConfig(icecastConfig);
+    const results = await api.updateIcecastConfig({
+      hostname: icecastConfig.host,
+      port: icecastConfig.port,
+      mount: icecastConfig.mountPoint,
+      password: icecastConfig.password,
+    });
+    console.log(results);
   };
 
   return (
     <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-lg shadow-md space-y-6"
+      >
         <h2 className="text-lg font-semibold mb-4">Icecast Configuration</h2>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Host</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Host
+          </label>
           <input
             type="text"
             value={icecastConfig.host}
@@ -33,7 +55,9 @@ export function Icecast() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Port</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Port
+          </label>
           <input
             type="number"
             value={icecastConfig.port}
@@ -49,14 +73,34 @@ export function Icecast() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mount Point</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <input
+            type="text"
+            value={icecastConfig.password}
+            onChange={(e) =>
+              setIcecastConfig({
+                ...icecastConfig,
+                password: icecastConfig.password,
+              })
+            }
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="super secret password"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Mount Point
+          </label>
           <div className="mt-1 flex rounded-md shadow-sm">
             <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
               /
             </span>
             <input
               type="text"
-              value={icecastConfig.mountPoint.replace(/^\//, '')}
+              value={icecastConfig.mountPoint.replace(/^\//, "")}
               onChange={(e) =>
                 setIcecastConfig({
                   ...icecastConfig,

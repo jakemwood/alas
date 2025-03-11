@@ -1,5 +1,10 @@
-import { create } from 'zustand';
-import type { NetworkConfig, AudioConfig, IcecastConfig, SystemStatus } from '../types';
+import { create } from "zustand";
+import type {
+  NetworkConfig,
+  AudioConfig,
+  IcecastConfig,
+  SystemStatus,
+} from "../types";
 
 interface AppState {
   networkConfig: NetworkConfig;
@@ -14,8 +19,8 @@ interface AppState {
 
 export const useStore = create<AppState>((set) => ({
   networkConfig: {
-    wifi: { ssid: '', password: '' },
-    apn: { name: '', username: '', password: '' },
+    wifi: { ssid: "", password: "" },
+    apn: { name: "", username: "", password: "" },
   },
   audioConfig: {
     silenceDuration: 30,
@@ -23,9 +28,10 @@ export const useStore = create<AppState>((set) => ({
     audioThreshold: -40,
   },
   icecastConfig: {
-    host: '',
+    host: "",
     port: 8000,
-    mountPoint: '',
+    mountPoint: "",
+    password: "",
   },
   systemStatus: {
     network: {

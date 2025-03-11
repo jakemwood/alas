@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { useStore } from '../lib/store';
-import { useApi } from '../lib/api';
-import { Wifi, WifiOff, Signal, Volume2, Radio } from 'lucide-react';
+import React, { useEffect } from "react";
+import { useStore } from "../lib/store";
+import { useApi } from "../lib/api";
+import { Wifi, WifiOff, Signal, Volume2, Radio } from "lucide-react";
 
 export function Dashboard() {
   const { systemStatus, updateSystemStatus } = useStore();
@@ -9,21 +9,23 @@ export function Dashboard() {
 
   useEffect(() => {
     const unsubscribe = api.subscribeToVolumeUpdates((volume) => {
-      updateSystemStatus({ audio: { ...systemStatus.audio, currentVolume: volume } });
+      updateSystemStatus({
+        audio: { ...systemStatus.audio, currentVolume: volume },
+      });
     });
 
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    api.getNetworkConfig().then(response => {
+    api.getNetworkConfig().then((response) => {
       updateSystemStatus({
         network: {
           wifiConnected: response.wifi_connected,
           cellularConnected: response.cell_connected,
           signalStrength: response.cell_strength,
-        }
-      })
+        },
+      });
     });
   }, []);
 
@@ -45,8 +47,16 @@ export function Dashboard() {
           <div className="flex items-center justify-between">
             <span>Cellular</span>
             <div className="flex items-center">
-              <Signal className={systemStatus.network.cellularConnected ? 'text-green-500' : 'text-red-500'} />
-              <span className="ml-2">{systemStatus.network.signalStrength}%</span>
+              <Signal
+                className={
+                  systemStatus.network.cellularConnected
+                    ? "text-green-500"
+                    : "text-red-500"
+                }
+              />
+              <span className="ml-2">
+                {systemStatus.network.signalStrength}%
+              </span>
             </div>
           </div>
         </div>
@@ -63,15 +73,21 @@ export function Dashboard() {
               <div
                 className="bg-blue-500 rounded-full h-2"
                 style={{
-                  width: `${((systemStatus.audio.currentVolume + 60) / 60) * 100}%`,
+                  width: `${
+                    ((systemStatus.audio.currentVolume + 60) / 60) * 100
+                  }%`,
                 }}
               />
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span>Status</span>
-            <span className={systemStatus.audio.isActive ? 'text-green-500' : 'text-red-500'}>
-              {systemStatus.audio.isActive ? 'Active' : 'Inactive'}
+            <span
+              className={
+                systemStatus.audio.isActive ? "text-green-500" : "text-red-500"
+              }
+            >
+              {systemStatus.audio.isActive ? "Active" : "Inactive"}
             </span>
           </div>
         </div>
@@ -84,8 +100,14 @@ export function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span>Connection</span>
-            <span className={systemStatus.icecast.connected ? 'text-green-500' : 'text-red-500'}>
-              {systemStatus.icecast.connected ? 'Connected' : 'Disconnected'}
+            <span
+              className={
+                systemStatus.icecast.connected
+                  ? "text-green-500"
+                  : "text-red-500"
+              }
+            >
+              {systemStatus.icecast.connected ? "Connected" : "Disconnected"}
             </span>
           </div>
         </div>

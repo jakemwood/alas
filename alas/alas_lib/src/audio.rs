@@ -35,9 +35,28 @@ pub fn start(
         let mut is_streaming = false;
         let mut is_recording = false;
         let mut desire_to_broadcast = Arc::new(AtomicBool::new(false));
+        let mut config_reset = Arc::new(AtomicBool::new(false));
         let mut audio_last_seen = UNIX_EPOCH;
 
         let mut audio_bus = Bus::<Vec<f32>>::new(2204 * 30);
+
+        // Config watch
+        let mut subscriber = bus.subscribe();
+        let config_reset_watch = config_reset.clone();
+        task::spawn_blocking(move || {
+            loop {
+                let msg = subscriber.blocking_recv();
+                if let Ok(msg) = msg {
+                    match msg {
+                        AlasMessage::StreamingConfigUpdated => {
+                            // Switch off the desire to broadcast to kill the loop
+                            config_reset_watch.store(true, Ordering::Relaxed);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        });
 
         // Icecast streaming thread
         let mut icecast_rx = audio_bus.add_rx();
@@ -68,7 +87,10 @@ pub fn start(
                     let config = { (&it_app_state.blocking_read().config).clone() };
                     let icecast_connection = connect_to_icecast(&config);
 
-                    while it_desire_to_broadcast.load(Ordering::Relaxed) {
+                    while
+                        it_desire_to_broadcast.load(Ordering::Relaxed) &&
+                        !config_reset.load(Ordering::Relaxed)
+                    {
                         let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
 
                         match icecast_connection.send(&mp3_buffer) {
@@ -262,7 +284,6 @@ fn connect_to_icecast(alas_config: &AlasConfig) -> ShoutConn {
     println!("Connecting to {}", alas_config.icecast.hostname);
     shout::ShoutConnBuilder
         ::new()
-        // TODO(!): pull from configuration values
         .host(alas_config.icecast.hostname.clone())
         .port(alas_config.icecast.port)
         .user(String::from("source"))
@@ -303,9 +324,10 @@ fn handle_samples<T>(
             desire_to_broadcast.store(true, Ordering::Relaxed);
         }
         *audio_last_seen = SystemTime::now();
-    } else if
-        // Before we do anything else, verify that we should still be recording/streaming
-        // TODO(config): 15 seconds needs to be configured (and usually much longer)
+    }
+    // Before we do anything else, verify that we should still be recording/streaming
+    // TODO(config): 15 seconds needs to be configured (and usually much longer)
+    else if
         SystemTime::now().duration_since(*audio_last_seen).unwrap().as_secs() > 15
     {
         if desire_to_broadcast.load(Ordering::Relaxed) {

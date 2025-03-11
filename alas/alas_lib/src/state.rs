@@ -89,6 +89,7 @@ pub enum AlasMessage {
     RecordingStopped,
     StreamingStarted,
     StreamingStopped,
+    StreamingConfigUpdated,
 }
 
 pub type UnsafeState = AlasState;

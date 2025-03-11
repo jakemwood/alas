@@ -1,6 +1,6 @@
-import React from 'react';
-import { useStore } from '../lib/store';
-import { useApi } from '../lib/api';
+import React from "react";
+import { useStore } from "../lib/store";
+import { useApi } from "../lib/api";
 
 export function Network() {
   const api = useApi();
@@ -18,7 +18,9 @@ export function Network() {
           <h2 className="text-lg font-semibold mb-4">WiFi Configuration</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">SSID</label>
+              <label className="block text-sm font-medium text-gray-700">
+                SSID
+              </label>
               <input
                 type="text"
                 value={networkConfig.wifi.ssid}
@@ -32,7 +34,9 @@ export function Network() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
                 type="password"
                 value={networkConfig.wifi.password}
@@ -52,7 +56,9 @@ export function Network() {
           <h2 className="text-lg font-semibold mb-4">APN Configuration</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Name
+              </label>
               <input
                 type="text"
                 value={networkConfig.apn.name}
@@ -66,7 +72,9 @@ export function Network() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Username</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Username
+              </label>
               <input
                 type="text"
                 value={networkConfig.apn.username}
@@ -80,7 +88,9 @@ export function Network() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
                 type="password"
                 value={networkConfig.apn.password}

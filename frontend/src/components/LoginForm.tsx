@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../lib/auth-store';
-import { authApi } from '../lib/auth-api';
-import { Settings } from 'lucide-react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../lib/auth-store";
+import { authApi } from "../lib/auth-api";
+import { Settings } from "lucide-react";
 
 export function LoginForm() {
-  const [ipAddress, setIpAddress] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [ipAddress, setIpAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
       await authApi.login({ ipAddress, password });
       login(ipAddress);
-      navigate('/');
+      navigate("/");
     } catch (err) {
       console.error(err);
-      setError('Invalid credentials');
+      setError("Invalid credentials");
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +44,10 @@ export function LoginForm() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="ipAddress" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="ipAddress"
+                className="block text-sm font-medium text-gray-700"
+              >
                 IP Address
               </label>
               <input
@@ -59,7 +62,10 @@ export function LoginForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <input
@@ -78,7 +84,7 @@ export function LoginForm() {
             disabled={isLoading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {isLoading ? 'Logging in...' : 'Log in'}
+            {isLoading ? "Logging in..." : "Log in"}
           </button>
         </form>
       </div>

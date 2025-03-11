@@ -11,8 +11,8 @@ export function useApi() {
 
     async updateNetworkConfig(config: any) {
       const res = await fetch(`${API_BASE}/network`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
       });
       return res.json();
@@ -25,8 +25,8 @@ export function useApi() {
 
     async updateAudioConfig(config: any) {
       const res = await fetch(`${API_BASE}/audio`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
       });
       return res.json();
@@ -39,8 +39,8 @@ export function useApi() {
 
     async updateIcecastConfig(config: any) {
       const res = await fetch(`${API_BASE}/icecast`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
       });
       return res.json();
@@ -48,13 +48,16 @@ export function useApi() {
 
     async updatePassword(currentPassword: string, newPassword: string) {
       const response = await fetch(`${API_BASE}/auth/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ old_password: currentPassword, new_password: newPassword }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          old_password: currentPassword,
+          new_password: newPassword,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update password');
+        throw new Error("Failed to update password");
       }
     },
 

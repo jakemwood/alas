@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::{select, signal, time};
+use tokio::{ select, signal, time };
 use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use zbus::Connection;
 use zbus::export::futures_util::StreamExt;
 use zbus::fdo::ObjectManagerProxy;
-use zbus::zvariant::{ObjectPath, OwnedObjectPath, Value };
+use zbus::zvariant::{ ObjectPath, OwnedObjectPath, Value };
 use crate::modem_manager::{ ModemProxy, ModemSimpleProxy };
 use crate::network_manager::{ get_all_devices, DeviceProxy, NetworkManagerProxy, StateChangedArgs };
-use crate::state::{AlasMessage, SafeState};
+use crate::state::{ AlasMessage, SafeState };
 use crate::wifi::AlasWiFiState;
 
 async fn find_cell_device_path(conn: &Connection) -> Option<OwnedObjectPath> {
@@ -46,16 +46,18 @@ async fn find_modem_device(conn: &Connection) -> ModemProxy {
 async fn list_modems() -> Result<Vec<OwnedObjectPath>, Box<dyn std::error::Error>> {
     let conn = Connection::system().await.expect("No connection");
     let obj_man_res = zbus::fdo::ObjectManagerProxy
-    ::builder(&conn)
+        ::builder(&conn)
         .destination("org.freedesktop.ModemManager1")?
         .path("/org/freedesktop/ModemManager1")?
         .build().await?;
 
     let managed_objects = obj_man_res.get_managed_objects().await?;
-    Ok(managed_objects
-        .keys()
-        .map(|k| k.to_owned())
-        .collect::<Vec<_>>())
+    Ok(
+        managed_objects
+            .keys()
+            .map(|k| k.to_owned())
+            .collect::<Vec<_>>()
+    )
 }
 
 pub async fn connect_to_cellular() {
@@ -164,12 +166,7 @@ impl CellObserver {
     async fn set_current_state(&self, state: i32, quality: u32) {
         let mut write_state = self.state.write().await;
         let new_state = {
-            if state == 11 {
-                AlasWiFiState::Connected
-            }
-            else {
-                AlasWiFiState::Connecting
-            }
+            if state == 11 { AlasWiFiState::Connected } else { AlasWiFiState::Connecting }
         };
         (*write_state).cell_on = new_state == AlasWiFiState::Connected;
         (*write_state).cell_strength = quality;

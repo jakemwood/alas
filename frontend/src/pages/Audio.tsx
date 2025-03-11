@@ -1,6 +1,6 @@
-import React from 'react';
-import { useStore } from '../lib/store';
-import { useApi } from '../lib/api';
+import React from "react";
+import { useStore } from "../lib/store";
+import { useApi } from "../lib/api";
 
 export function Audio() {
   const { audioConfig, setAudioConfig } = useStore();
@@ -13,7 +13,10 @@ export function Audio() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-lg shadow-md space-y-6"
+      >
         <h2 className="text-lg font-semibold mb-4">Audio Configuration</h2>
 
         <div>
