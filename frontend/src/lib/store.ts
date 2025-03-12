@@ -40,7 +40,7 @@ export const useStore = create<AppState>((set) => ({
       signalStrength: 0,
     },
     audio: {
-      currentVolume: -30,
+      currentVolume: -100,
       isActive: false,
     },
     icecast: {
@@ -51,7 +51,7 @@ export const useStore = create<AppState>((set) => ({
   setAudioConfig: (config) => set({ audioConfig: config }),
   setIcecastConfig: (config) => set({ icecastConfig: config }),
   updateSystemStatus: (status) =>
-    set((state) => ({
-      systemStatus: { ...state.systemStatus, ...status },
-    })),
+    set((state) => {
+      return { systemStatus: { ...state.systemStatus, ...status }}
+    }),
 }));

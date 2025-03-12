@@ -43,7 +43,7 @@ async fn main() {
 
     // LCD should always be last to exit so that we can display all messages
     println!("Waiting for web server to await...");
-    let _ = web_server.await.unwrap();
+    web_server.await.unwrap();
     println!("Waiting for lcd rx to unwrap...");
     lcd_rx_thread.await.unwrap();
     println!("Waiting for lcd tx to unwrap...");

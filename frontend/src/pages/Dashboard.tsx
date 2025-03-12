@@ -8,6 +8,21 @@ export function Dashboard() {
   const api = useApi();
 
   useEffect(() => {
+    api.getAudioConfig().then(response => {
+      console.log("audio", response);
+      updateSystemStatus({
+        audio: {
+          isActive: response.audio_present,
+          currentVolume: systemStatus.audio.currentVolume,
+        },
+        icecast: {
+          connected: response.is_streaming,
+        }
+      });
+    });
+  }, [])
+
+  useEffect(() => {
     const unsubscribe = api.subscribeToVolumeUpdates((volume) => {
       updateSystemStatus({
         audio: { ...systemStatus.audio, currentVolume: volume },
@@ -15,7 +30,7 @@ export function Dashboard() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [systemStatus.audio.isActive]);
 
   useEffect(() => {
     api.getNetworkConfig().then((response) => {
@@ -68,13 +83,13 @@ export function Dashboard() {
         </h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span>Current Volume</span>
+            <span>Audio Meter</span>
             <div className="w-32 bg-gray-200 rounded-full h-2">
               <div
                 className="bg-blue-500 rounded-full h-2"
                 style={{
                   width: `${
-                    ((systemStatus.audio.currentVolume + 60) / 60) * 100
+                    (systemStatus.audio.currentVolume + 100).toString()
                   }%`,
                 }}
               />

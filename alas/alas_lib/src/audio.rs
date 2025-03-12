@@ -1,7 +1,7 @@
 use cpal::traits::{ DeviceTrait, HostTrait, StreamTrait };
 use cpal::Sample;
 use mp3lame_encoder::{ DualPcm, Encoder, FlushNoGap };
-use shout::ShoutConn;
+use shout::{ShoutConn, ShoutConnError};
 use std::fs::File;
 use std::io::Write;
 use std::sync::atomic::{ AtomicBool, Ordering };
@@ -12,11 +12,12 @@ use tokio::sync::broadcast::Sender;
 
 use crate::config::AlasConfig;
 use crate::state::AlasMessage::VolumeChange;
-use crate::state::{ AlasMessage, SafeState };
+use crate::state::{AlasMessage, AlasState, SafeState};
 use bus::Bus;
 use futures::future::{ join_all, JoinAll };
 use tokio::task::JoinHandle;
 use tokio::{ signal, task };
+use tokio::sync::RwLock;
 
 /// Starts the thread for handling audio.
 ///
@@ -32,7 +33,6 @@ pub fn start(
     let alas_state = alas_state.clone();
 
     task::spawn_blocking(move || {
-        let mut is_streaming = false;
         let mut is_recording = false;
         let mut desire_to_broadcast = Arc::new(AtomicBool::new(false));
         let mut config_reset = Arc::new(AtomicBool::new(false));
@@ -59,139 +59,20 @@ pub fn start(
         });
 
         // Icecast streaming thread
-        let mut icecast_rx = audio_bus.add_rx();
-        let icecast_bus = bus.clone();
-        let it_desire_to_broadcast = desire_to_broadcast.clone();
-        let it_app_state = alas_state.clone();
-        let icecast = task::spawn_blocking(move || {
-            // Set up the MP3 encoder.
-            let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
-            mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
-            mp3_encoder
-                .set_sample_rate(44_100) // TODO(config)
-                .expect("set sample rate");
-            mp3_encoder
-                .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
-                .expect("set brate");
-            let mut mp3_encoder = mp3_encoder.build().expect("Could not init LAME");
-
-            loop {
-                let mut input = match icecast_rx.recv() {
-                    Ok(input) => input,
-                    Err(_) => {
-                        break;
-                    }
-                };
-
-                if it_desire_to_broadcast.load(Ordering::Relaxed) {
-                    let config = { (&it_app_state.blocking_read().config).clone() };
-                    let icecast_connection = connect_to_icecast(&config);
-
-                    while
-                        it_desire_to_broadcast.load(Ordering::Relaxed) &&
-                        !config_reset.load(Ordering::Relaxed)
-                    {
-                        let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
-
-                        match icecast_connection.send(&mp3_buffer) {
-                            Ok(_) => {
-                                if !&is_streaming {
-                                    is_streaming = true;
-                                    let _ = &icecast_bus.send(AlasMessage::StreamingStarted);
-                                }
-                            }
-                            Err(err) => {
-                                is_streaming = false;
-                                let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
-
-                                // Attempt to reconnect
-                                match icecast_connection.reconnect() {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        eprintln!("Icecast re-connect error: {:?}", e);
-                                    }
-                                }
-                            }
-                        }
-
-                        input = match icecast_rx.recv() {
-                            Ok(input) => input,
-                            Err(_) => {
-                                break;
-                            }
-                        };
-                    }
-
-                    is_streaming = false;
-                    let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
-                }
-            }
-
-            let _ = &icecast_bus.send(AlasMessage::StreamingStopped);
-            println!("Closed Icecast streaming thread");
-        });
+        let icecast = start_icecast_thread(
+            &mut audio_bus,
+            desire_to_broadcast.clone(),
+            alas_state.clone(),
+            bus.clone(),
+            config_reset.clone(),
+        );
 
         // File saving thread
-        let mut file_rx = audio_bus.add_rx();
-        let file_bus = bus.clone();
-        let ft_desire_to_broadcast = desire_to_broadcast.clone();
-        let record = task::spawn_blocking(move || {
-            // TODO(config)
-            let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
-            mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
-            mp3_encoder
-                .set_sample_rate(44_100) // TODO(config)
-                .expect("set sample rate");
-            mp3_encoder
-                .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
-                .expect("set brate");
-            let mut mp3_encoder = mp3_encoder.build().expect("Could not init LAME");
-
-            loop {
-                let mut input = match file_rx.recv() {
-                    Ok(input) => input,
-                    Err(_) => {
-                        break;
-                    }
-                };
-
-                if ft_desire_to_broadcast.load(Ordering::Relaxed) {
-                    let mut recording_file = open_file_named_now();
-
-                    while ft_desire_to_broadcast.load(Ordering::Relaxed) {
-                        let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
-                        match recording_file.write_all(&mp3_buffer) {
-                            Ok(_) => {
-                                // Transition the state if we're not already set to recording
-                                if !&is_recording {
-                                    is_recording = true;
-                                    // Send message to bus that we are recording
-                                    let _ = &file_bus.send(AlasMessage::RecordingStarted).unwrap();
-                                }
-                            }
-                            Err(err) => {
-                                eprintln!("Error writing to file: {:?} 174", err);
-                                is_recording = false;
-                                let _ = &file_bus.send(AlasMessage::RecordingStopped).unwrap();
-                            }
-                        }
-
-                        input = match file_rx.recv() {
-                            Ok(input) => input,
-                            Err(_) => {
-                                break;
-                            }
-                        };
-                    }
-
-                    is_recording = false;
-                    let _ = &file_bus.send(AlasMessage::RecordingStopped);
-                }
-            }
-
-            let _ = &file_bus.send(AlasMessage::RecordingStopped);
-            println!("Exiting file write thread");
-        });
+        let record = start_file_save_thread(
+            &mut audio_bus,
+            desire_to_broadcast.clone(),
+            bus.clone(),
+        );
 
         let host = cpal::default_host();
         let device = host.default_input_device().expect("No default sound card");
@@ -216,6 +97,7 @@ pub fn start(
                             handle_samples::<f32>(
                                 data,
                                 &bus,
+                                &alas_state,
                                 &mut desire_to_broadcast,
                                 &mut audio_last_seen,
                                 &mut audio_bus
@@ -237,6 +119,157 @@ pub fn start(
         println!("After sleep!");
 
         join_all(vec![icecast, record])
+    })
+}
+
+fn start_file_save_thread(
+    audio_bus: &mut Bus<Vec<f32>>,
+    desire_to_broadcast: Arc<AtomicBool>,
+    file_bus: Sender<AlasMessage>,
+) -> JoinHandle<()> {
+    let mut file_rx = audio_bus.add_rx();
+    let mut is_recording = false;
+
+    task::spawn_blocking(move || {
+        // TODO(config)
+        let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
+        mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
+        mp3_encoder
+            .set_sample_rate(44_100) // TODO(config)
+            .expect("set sample rate");
+        mp3_encoder
+            .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
+            .expect("set brate");
+        let mut mp3_encoder = mp3_encoder.build().expect("Could not init LAME");
+
+        loop {
+            let mut input = match file_rx.recv() {
+                Ok(input) => input,
+                Err(_) => {
+                    break;
+                }
+            };
+
+            if desire_to_broadcast.load(Ordering::Relaxed) {
+                let mut recording_file = open_file_named_now();
+
+                while desire_to_broadcast.load(Ordering::Relaxed) {
+                    let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
+                    match recording_file.write_all(&mp3_buffer) {
+                        Ok(_) => {
+                            // Transition the state if we're not already set to recording
+                            if !&is_recording {
+                                is_recording = true;
+                                // Send message to bus that we are recording
+                                let _ = &file_bus.send(AlasMessage::RecordingStarted).unwrap();
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("Error writing to file: {:?} 174", err);
+                            is_recording = false;
+                            let _ = &file_bus.send(AlasMessage::RecordingStopped).unwrap();
+                        }
+                    }
+
+                    input = match file_rx.recv() {
+                        Ok(input) => input,
+                        Err(_) => {
+                            break;
+                        }
+                    };
+                }
+
+                is_recording = false;
+                let _ = &file_bus.send(AlasMessage::RecordingStopped);
+                println!("Stopped recording");
+            }
+        }
+
+        let _ = &file_bus.send(AlasMessage::RecordingStopped);
+        println!("Exiting file write thread");
+    })
+}
+
+fn start_icecast_thread(
+    audio_bus: &mut Bus<Vec<f32>>,
+    desire_to_broadcast: Arc<AtomicBool>,
+    state: Arc<RwLock<AlasState>>,
+    message_bus: Sender<AlasMessage>,
+    config_reset: Arc<AtomicBool>,
+) -> JoinHandle<()> {
+    let mut icecast_rx = audio_bus.add_rx();
+
+    task::spawn_blocking(move || {
+        // Set up the MP3 encoder.
+        let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
+        mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
+        mp3_encoder
+            .set_sample_rate(44_100) // TODO(config)
+            .expect("set sample rate");
+        mp3_encoder
+            .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
+            .expect("set brate");
+        let mut mp3_encoder = mp3_encoder.build().expect("Could not init LAME");
+
+        loop {
+            let mut input = match icecast_rx.recv() {
+                Ok(input) => input,
+                Err(_) => {
+                    break;
+                }
+            };
+
+            if desire_to_broadcast.load(Ordering::Relaxed) {
+                let icecast_connection = connect_to_icecast(&state);
+                config_reset.store(false, Ordering::Relaxed);
+
+                while desire_to_broadcast.load(Ordering::Relaxed) && !config_reset.load(Ordering::Relaxed) {
+                    let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
+
+                    match icecast_connection.send(&mp3_buffer) {
+                        Ok(_) => {
+                            if !state.blocking_read().is_streaming {
+                                let mut mutable_state = state.blocking_write();
+                                mutable_state.is_streaming = true;
+                                let _ = message_bus.send(AlasMessage::StreamingStarted);
+                            }
+                        }
+                        Err(err) => {
+                            let mut mutable_state = state.blocking_write();
+                            mutable_state.is_streaming = false;
+                            let _ = message_bus.send(AlasMessage::StreamingStopped);
+
+                            // Attempt to reconnect
+                            match icecast_connection.reconnect() {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    eprintln!("Icecast re-connect error: {:?}", e);
+                                }
+                            }
+                        }
+                    }
+
+                    input = match icecast_rx.recv() {
+                        Ok(input) => input,
+                        Err(_) => {
+                            break;
+                        }
+                    };
+                    // TODO: handle graceful exit
+                }
+
+                let mut mutable_state = state.blocking_write();
+                mutable_state.is_streaming = false;
+                let _ = message_bus.send(AlasMessage::StreamingStopped);
+            }
+
+            // TODO: handle graceful exit
+        }
+
+        let mut mutable_state = state.blocking_write();
+        mutable_state.is_streaming = false;
+        let _ = message_bus.send(AlasMessage::StreamingStopped);
+        println!("Closed Icecast streaming thread");
     })
 }
 
@@ -280,19 +313,29 @@ fn open_file_named_now() -> File {
     File::create(formatted_time).expect("to open file")
 }
 
-fn connect_to_icecast(alas_config: &AlasConfig) -> ShoutConn {
-    println!("Connecting to {}", alas_config.icecast.hostname);
-    shout::ShoutConnBuilder
-        ::new()
-        .host(alas_config.icecast.hostname.clone())
-        .port(alas_config.icecast.port)
-        .user(String::from("source"))
-        .password(alas_config.icecast.password.clone())
-        .mount(alas_config.icecast.mount.clone())
-        .protocol(shout::ShoutProtocol::HTTP)
-        .format(shout::ShoutFormat::MP3)
-        .build()
-        .expect("to have icecast")
+fn connect_to_icecast(state: &SafeState) -> ShoutConn {
+    println!("Connection attempt!");
+    loop {
+        let state = state.blocking_read();
+        let config = &state.config.icecast;
+        println!("Connecting to {:} {:}", config.hostname, config.mount);
+        let connection = shout::ShoutConnBuilder::new()
+            .host(config.hostname.clone())
+            .port(config.port)
+            .user(String::from("source"))
+            .password(config.password.clone())
+            .mount(config.mount.clone())
+            .protocol(shout::ShoutProtocol::HTTP)
+            .format(shout::ShoutFormat::MP3)
+            .build();
+        if let Ok(connection) = connection {
+            return connection;
+        } else {
+            // Sleep for 3 seconds and try re-connecting
+            println!("Sleeping for 3 seconds and then re-trying our connection");
+            std::thread::sleep(std::time::Duration::from_secs(3));
+        }
+    }
 }
 
 fn float_to_i16(sample: f32) -> i16 {
@@ -307,6 +350,7 @@ fn float_to_i16(sample: f32) -> i16 {
 fn handle_samples<T>(
     input: &[T],
     bus: &Sender<AlasMessage>,
+    state: &SafeState,
     desire_to_broadcast: &AtomicBool,
     audio_last_seen: &mut SystemTime,
     sender: &mut Bus<Vec<T>>
@@ -322,6 +366,9 @@ fn handle_samples<T>(
         if !desire_to_broadcast.load(Ordering::Relaxed) {
             println!("Audio is now available!");
             desire_to_broadcast.store(true, Ordering::Relaxed);
+
+            let mut state = state.blocking_write();
+            (*state).is_audio_present = true;
         }
         *audio_last_seen = SystemTime::now();
     }
@@ -334,6 +381,8 @@ fn handle_samples<T>(
             println!("There has been 15 seconds of silence!");
         }
         desire_to_broadcast.store(false, Ordering::Relaxed);
+        let mut state = state.blocking_write();
+        (*state).is_audio_present = false;
     }
 
     sender.broadcast(input.to_vec());

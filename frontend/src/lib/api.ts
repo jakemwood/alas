@@ -64,7 +64,7 @@ export function useApi() {
     subscribeToVolumeUpdates(callback: (volume: number) => void) {
       const eventSource = new EventSource(`${API_BASE}/audio/volume`);
       eventSource.onmessage = (event) => {
-        callback(event.data);
+        callback(parseFloat(event.data));
       };
       return () => eventSource.close();
     },

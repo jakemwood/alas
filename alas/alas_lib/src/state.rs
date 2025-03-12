@@ -1,11 +1,4 @@
-use crate::config::{
-    load_config,
-    AlasAudioConfig,
-    AlasCellularConfig,
-    AlasConfig,
-    AlasIcecastConfig,
-    AlasWiFiConfig,
-};
+use crate::config::{load_config, save_config, AlasAudioConfig, AlasCellularConfig, AlasConfig, AlasIcecastConfig, AlasWiFiConfig};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use crate::wifi::AlasWiFiState;
@@ -34,6 +27,12 @@ impl AlasState {
             audio_last_seen: 0,
             config: load_config(),
         }
+    }
+
+    // Update config
+    pub fn update_config(&mut self, new_config: AlasConfig) {
+        self.config = new_config;
+        save_config(&self.config);
     }
 
     pub fn test() -> AlasState {

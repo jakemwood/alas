@@ -229,12 +229,31 @@ async fn get_icecast_config() -> Json<AlasIcecastConfig> {
 }
 
 #[post("/icecast", format = "json", data = "<request>")]
-async fn set_icecast_config(request: Json<AlasIcecastConfig>, bus: &State<Sender<AlasMessage>>) -> Json<AlasIcecastConfig> {
-    let mut config = load_config().clone();
-    config.icecast = request.into_inner();
-    save_config(&config);
-    bus.send(AlasMessage::StreamingConfigUpdated).await;
-    Json(config.icecast)
+async fn set_icecast_config(request: Json<AlasIcecastConfig>, bus: &State<Sender<AlasMessage>>, state: &State<SafeState>) -> Json<AlasIcecastConfig> {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.icecast = request.into_inner();
+    state.update_config(new_config);
+    let _ = bus.send(AlasMessage::StreamingConfigUpdated);
+    Json(state.config.icecast.clone())
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct AudioStatus {
+    audio_present: bool,
+    is_streaming: bool,
+    is_recording: bool,
+}
+
+#[get("/audio")]
+async fn get_audio_state(state: &State<SafeState>) -> Json<AudioStatus> {
+    let state = state.read().await;
+    Json(AudioStatus {
+        audio_present: state.is_audio_present,
+        is_streaming: state.is_streaming,
+        is_recording: state.is_recording,
+    })
 }
 
 #[derive(Serialize)]
@@ -333,7 +352,8 @@ fn rocket(bus: Sender<AlasMessage>, alas_state: SafeState) -> Rocket<Build> {
                 change_password,
                 get_network_status,
                 get_icecast_config,
-                set_icecast_config
+                set_icecast_config,
+                get_audio_state,
             ]
         )
         .mount("/null", routes![do_null])
