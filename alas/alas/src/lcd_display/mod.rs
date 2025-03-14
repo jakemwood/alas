@@ -180,18 +180,22 @@ pub async fn start(
             select! {
                 message = lcd_rx.recv() => {
                     match message {
+                        Ok(AlasMessage::Exit) => {
+                            break;
+                        }
                         Ok(message) => {
-                            handle_message(write_state.clone(), &write_shared_state, message, &mut write_port).await;
+                            handle_message(
+                                write_state.clone(),
+                                &write_shared_state,
+                                message,
+                                &mut write_port
+                            ).await;
                         }
                         Err(e) => {
                             println!("{:?}", e);
                             break;
                         }
                     }
-                },
-                _ = signal::ctrl_c() => {
-                    println!("Ctrl+C detected in LCD writer loop!");
-                    break;
                 }
             }
         }

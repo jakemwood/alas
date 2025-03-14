@@ -27,7 +27,9 @@ async fn main() {
     let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
     let wifi_changes = wifi_observer.listen();
 
-    let audio = alas_lib::audio::start(event_bus.clone(), &state);
+    let audio = alas_lib::audio::start(event_bus.clone(), &state).await;
+    println!("Audio results are: {:?}", audio);
+
     let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
 
     // Wait for exit here! All code below is for clean-up!
@@ -37,15 +39,24 @@ async fn main() {
 
     // Await all of our "threads" here to clean up...
     println!("Waiting for Wi-Fi to unwrap...");
-    wifi_changes.await.unwrap();
-    println!("Waiting for audio to unwrap...");
-    let _ = audio.await.unwrap();
+    wifi_changes.await.expect("Oh well 1");
+
+    println!("Waiting for cellular to unwrap...");
+    let _ = cell_changes.await;
 
     // LCD should always be last to exit so that we can display all messages
     println!("Waiting for web server to await...");
-    web_server.await.unwrap();
+    web_server.await.expect("Oh well 3");
     println!("Waiting for lcd rx to unwrap...");
-    lcd_rx_thread.await.unwrap();
+    lcd_rx_thread.await.expect("Oh well 4");
     println!("Waiting for lcd tx to unwrap...");
-    lcd_tx_thread.await.unwrap();
+    lcd_tx_thread.await.expect("Oh well 5");
+    println!("Waiting for audio to unwrap...");
+    let (icecast, recording) = audio.await.expect("Oh well 6");
+    println!("Waiting for Icecast to unwrap...");
+    let result = icecast.await.unwrap();
+    println!("Icecast unwrapped: {:?}", result);
+    println!("Waiting for recording to unwrap...");
+    let recording_result = recording.await.unwrap();
+    println!("Recording result: {:?}", recording_result);
 }

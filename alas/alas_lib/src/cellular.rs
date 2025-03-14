@@ -142,6 +142,8 @@ impl CellObserver {
                     }
                 }
             }
+
+            println!("Exiting cellular loop");
         })
     }
 

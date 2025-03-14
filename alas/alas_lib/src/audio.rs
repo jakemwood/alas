@@ -16,7 +16,7 @@ use crate::state::{AlasMessage, AlasState, SafeState};
 use bus::Bus;
 use futures::future::{ join_all, JoinAll };
 use tokio::task::JoinHandle;
-use tokio::{ signal, task };
+use tokio::{select, signal, task};
 use tokio::sync::RwLock;
 
 /// Starts the thread for handling audio.
@@ -25,10 +25,10 @@ use tokio::sync::RwLock;
 /// if there is currently audio flowing through the system, how long it has been
 /// silent, etc. It will also start and stop the Icecast thread based on these
 /// times.
-pub fn start(
+pub async fn start(
     bus: Sender<AlasMessage>,
     alas_state: &SafeState
-) -> JoinHandle<JoinAll<JoinHandle<()>>> {
+) -> JoinHandle<(JoinHandle<&'static str>, JoinHandle<&'static str>)> {
     let handler = Handle::current();
     let alas_state = alas_state.clone();
 
@@ -51,7 +51,10 @@ pub fn start(
                         AlasMessage::StreamingConfigUpdated => {
                             // Switch off the desire to broadcast to kill the loop
                             config_reset_watch.store(true, Ordering::Relaxed);
-                        }
+                        },
+                        AlasMessage::Exit => {
+                            return;
+                        },
                         _ => {}
                     }
                 }
@@ -66,8 +69,8 @@ pub fn start(
             bus.clone(),
             config_reset.clone(),
         );
-
-        // File saving thread
+        //
+        // // File saving thread
         let record = start_file_save_thread(
             &mut audio_bus,
             desire_to_broadcast.clone(),
@@ -85,6 +88,7 @@ pub fn start(
         println!("Default sample rate: {:?}", audio_device_config.sample_rate());
         println!("Default sample format: {:?}", audio_device_config.sample_format());
         println!("Default sample size: {:?}", audio_device_config.sample_format().sample_size());
+        let mut exit_bus = bus.subscribe();
 
         let stream = match audio_device_config.sample_format() {
             // TODO: HiFiBerry supports F32 by default, so that's what
@@ -113,12 +117,27 @@ pub fn start(
         stream.play().expect("Could not play");
         println!("After play!");
 
-        handler.block_on(async {
-            signal::ctrl_c().await.expect("failed to listen for exit event");
+        handler.block_on(async move {
+            loop {
+                select! {
+                    message = exit_bus.recv() => {
+                        match message {
+                            Ok(AlasMessage::Exit) => {
+                                return;
+                            },
+                            Err(e) => {
+                                eprintln!("{:?}", e);
+                                return;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
         });
-        println!("After sleep!");
+        println!("Received exit message in audio thread...");
 
-        join_all(vec![icecast, record])
+        (icecast, record)
     })
 }
 
@@ -126,7 +145,7 @@ fn start_file_save_thread(
     audio_bus: &mut Bus<Vec<f32>>,
     desire_to_broadcast: Arc<AtomicBool>,
     file_bus: Sender<AlasMessage>,
-) -> JoinHandle<()> {
+) -> JoinHandle<&'static str> {
     let mut file_rx = audio_bus.add_rx();
     let mut is_recording = false;
 
@@ -186,7 +205,7 @@ fn start_file_save_thread(
         }
 
         let _ = &file_bus.send(AlasMessage::RecordingStopped);
-        println!("Exiting file write thread");
+        "Exiting file write thread"
     })
 }
 
@@ -196,7 +215,7 @@ fn start_icecast_thread(
     state: Arc<RwLock<AlasState>>,
     message_bus: Sender<AlasMessage>,
     config_reset: Arc<AtomicBool>,
-) -> JoinHandle<()> {
+) -> JoinHandle<&'static str> {
     let mut icecast_rx = audio_bus.add_rx();
 
     task::spawn_blocking(move || {
@@ -234,7 +253,7 @@ fn start_icecast_thread(
                                 let _ = message_bus.send(AlasMessage::StreamingStarted);
                             }
                         }
-                        Err(err) => {
+                        Err(_err) => {
                             let mut mutable_state = state.blocking_write();
                             mutable_state.is_streaming = false;
                             let _ = message_bus.send(AlasMessage::StreamingStopped);
@@ -270,6 +289,8 @@ fn start_icecast_thread(
         mutable_state.is_streaming = false;
         let _ = message_bus.send(AlasMessage::StreamingStopped);
         println!("Closed Icecast streaming thread");
+
+        "Success! Returned out of Icecast thread!"
     })
 }
 
