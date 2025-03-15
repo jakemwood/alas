@@ -13,12 +13,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-  steps:
-    - run: sudo apt-get -y install alsa-base alsa-utils libasound2-dev libudev-dev
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-      working_directory: alas
-    - name: Run tests
-      run: cargo test --verbose
-      working_directory: alas
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get -y install alsa-base alsa-utils libasound2-dev libudev-dev
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build
+        working-directory: alas
+        run: cargo build --verbose
+
+      - name: Run tests
+        working-directory: alas
+        run: cargo test --verbose
