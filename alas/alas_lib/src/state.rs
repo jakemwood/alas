@@ -1,4 +1,12 @@
-use crate::config::{load_config, save_config, AlasAudioConfig, AlasCellularConfig, AlasConfig, AlasIcecastConfig, AlasWiFiConfig};
+use crate::config::{
+    load_config,
+    save_config,
+    AlasAudioConfig,
+    AlasCellularConfig,
+    AlasConfig,
+    AlasIcecastConfig,
+    AlasWiFiConfig,
+};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use crate::wifi::AlasWiFiState;
@@ -47,6 +55,7 @@ impl AlasState {
             config: AlasConfig {
                 audio: AlasAudioConfig {
                     silence_duration_before_deactivation: 15,
+                    silence_threshold: -55.0,
                 },
                 icecast: AlasIcecastConfig {
                     hostname: "localhost".to_string(),

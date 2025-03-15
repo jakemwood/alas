@@ -52,10 +52,13 @@ async fn main() {
     println!("Waiting for lcd tx to unwrap...");
     lcd_tx_thread.await.expect("Oh well 5");
     println!("Waiting for audio to unwrap...");
-    let (icecast, recording) = audio.await.expect("Oh well 6");
+    let (config_thread, icecast, recording) = audio.await.expect("Oh well 6");
+    println!("Waiting for config thread to unwrap...");
+    let result_one = config_thread.await.unwrap();
+    println!("Results: {:?}", result_one);
     println!("Waiting for Icecast to unwrap...");
-    let result = icecast.await.unwrap();
-    println!("Icecast unwrapped: {:?}", result);
+    let result_two = icecast.await.unwrap();
+    println!("Icecast unwrapped: {:?}", result_two);
     println!("Waiting for recording to unwrap...");
     let recording_result = recording.await.unwrap();
     println!("Recording result: {:?}", recording_result);

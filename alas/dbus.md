@@ -13,6 +13,7 @@ A 32-bit unsigned integer (range: 0 to 4,294,967,295).
 Example: `42`
 
 ## i: Signed Integer (32-bit)
+
 A 32-bit signed integer (range: -2,147,483,648 to 2,147,483,647).
 
 Example: `-1`, `0`, `100`

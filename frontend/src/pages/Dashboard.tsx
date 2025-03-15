@@ -8,7 +8,7 @@ export function Dashboard() {
   const api = useApi();
 
   useEffect(() => {
-    api.getAudioConfig().then(response => {
+    api.getAudioStatus().then(response => {
       console.log("audio", response);
       updateSystemStatus({
         audio: {
@@ -33,7 +33,7 @@ export function Dashboard() {
   }, [systemStatus.audio.isActive]);
 
   useEffect(() => {
-    api.getNetworkConfig().then((response) => {
+    api.getNetworkStatus().then((response) => {
       updateSystemStatus({
         network: {
           wifiConnected: response.wifi_connected,

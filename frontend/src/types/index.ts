@@ -11,9 +11,8 @@ export interface NetworkConfig {
 }
 
 export interface AudioConfig {
-  silenceDuration: number;
-  silenceThreshold: number;
-  audioThreshold: number;
+  silenceDuration: string;
+  silenceThreshold: string;
 }
 
 export interface IcecastConfig {

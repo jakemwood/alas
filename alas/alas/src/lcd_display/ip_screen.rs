@@ -33,7 +33,7 @@ impl Screen for IPScreen {
         }
     }
 
-    fn redraw_screen(&self, port: &mut Box<dyn SerialPort>) {}
+    fn redraw_screen(&self, _port: &mut Box<dyn SerialPort>) {}
 
     fn handle_button(&self, _: &UnsafeState, button: u8) -> Option<Box<dyn Screen>> {
         match button {

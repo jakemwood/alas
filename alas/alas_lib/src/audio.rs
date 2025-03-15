@@ -1,7 +1,7 @@
 use cpal::traits::{ DeviceTrait, HostTrait, StreamTrait };
 use cpal::Sample;
 use mp3lame_encoder::{ DualPcm, Encoder, FlushNoGap };
-use shout::{ShoutConn, ShoutConnError};
+use shout::{ ShoutConn };
 use std::fs::File;
 use std::io::Write;
 use std::sync::atomic::{ AtomicBool, Ordering };
@@ -10,13 +10,11 @@ use std::time::{ SystemTime, UNIX_EPOCH };
 use tokio::runtime::Handle;
 use tokio::sync::broadcast::Sender;
 
-use crate::config::AlasConfig;
 use crate::state::AlasMessage::VolumeChange;
-use crate::state::{AlasMessage, AlasState, SafeState};
+use crate::state::{ AlasMessage, AlasState, SafeState };
 use bus::Bus;
-use futures::future::{ join_all, JoinAll };
 use tokio::task::JoinHandle;
-use tokio::{select, signal, task};
+use tokio::{ select, task };
 use tokio::sync::RwLock;
 
 /// Starts the thread for handling audio.
@@ -28,7 +26,7 @@ use tokio::sync::RwLock;
 pub async fn start(
     bus: Sender<AlasMessage>,
     alas_state: &SafeState
-) -> JoinHandle<(JoinHandle<&'static str>, JoinHandle<&'static str>)> {
+) -> JoinHandle<(JoinHandle<()>, JoinHandle<&'static str>, JoinHandle<&'static str>)> {
     let handler = Handle::current();
     let alas_state = alas_state.clone();
 
@@ -43,22 +41,27 @@ pub async fn start(
         // Config watch
         let mut subscriber = bus.subscribe();
         let config_reset_watch = config_reset.clone();
-        task::spawn_blocking(move || {
+        let config_thread = task::spawn(async move {
             loop {
-                let msg = subscriber.blocking_recv();
+                let msg = subscriber.recv().await;
                 if let Ok(msg) = msg {
                     match msg {
                         AlasMessage::StreamingConfigUpdated => {
                             // Switch off the desire to broadcast to kill the loop
                             config_reset_watch.store(true, Ordering::Relaxed);
-                        },
+                        }
                         AlasMessage::Exit => {
+                            println!("✅ Exiting config thread!");
                             return;
-                        },
+                        }
                         _ => {}
                     }
+                } else {
+                    println!("❌ Exiting config loop on an error");
+                    break;
                 }
             }
+            println!("✅ Exited config thread");
         });
 
         // Icecast streaming thread
@@ -67,14 +70,14 @@ pub async fn start(
             desire_to_broadcast.clone(),
             alas_state.clone(),
             bus.clone(),
-            config_reset.clone(),
+            config_reset.clone()
         );
         //
         // // File saving thread
         let record = start_file_save_thread(
             &mut audio_bus,
             desire_to_broadcast.clone(),
-            bus.clone(),
+            bus.clone()
         );
 
         let host = cpal::default_host();
@@ -137,14 +140,14 @@ pub async fn start(
         });
         println!("Received exit message in audio thread...");
 
-        (icecast, record)
+        (config_thread, icecast, record)
     })
 }
 
 fn start_file_save_thread(
     audio_bus: &mut Bus<Vec<f32>>,
     desire_to_broadcast: Arc<AtomicBool>,
-    file_bus: Sender<AlasMessage>,
+    file_bus: Sender<AlasMessage>
 ) -> JoinHandle<&'static str> {
     let mut file_rx = audio_bus.add_rx();
     let mut is_recording = false;
@@ -205,7 +208,7 @@ fn start_file_save_thread(
         }
 
         let _ = &file_bus.send(AlasMessage::RecordingStopped);
-        "Exiting file write thread"
+        "✅ Exiting file write thread"
     })
 }
 
@@ -214,7 +217,7 @@ fn start_icecast_thread(
     desire_to_broadcast: Arc<AtomicBool>,
     state: Arc<RwLock<AlasState>>,
     message_bus: Sender<AlasMessage>,
-    config_reset: Arc<AtomicBool>,
+    config_reset: Arc<AtomicBool>
 ) -> JoinHandle<&'static str> {
     let mut icecast_rx = audio_bus.add_rx();
 
@@ -242,7 +245,10 @@ fn start_icecast_thread(
                 let icecast_connection = connect_to_icecast(&state);
                 config_reset.store(false, Ordering::Relaxed);
 
-                while desire_to_broadcast.load(Ordering::Relaxed) && !config_reset.load(Ordering::Relaxed) {
+                while
+                    desire_to_broadcast.load(Ordering::Relaxed) &&
+                    !config_reset.load(Ordering::Relaxed)
+                {
                     let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
 
                     match icecast_connection.send(&mp3_buffer) {
@@ -290,7 +296,7 @@ fn start_icecast_thread(
         let _ = message_bus.send(AlasMessage::StreamingStopped);
         println!("Closed Icecast streaming thread");
 
-        "Success! Returned out of Icecast thread!"
+        "✅ Success! Returned out of Icecast thread!"
     })
 }
 
@@ -340,7 +346,8 @@ fn connect_to_icecast(state: &SafeState) -> ShoutConn {
         let state = state.blocking_read();
         let config = &state.config.icecast;
         println!("Connecting to {:} {:}", config.hostname, config.mount);
-        let connection = shout::ShoutConnBuilder::new()
+        let connection = shout::ShoutConnBuilder
+            ::new()
             .host(config.hostname.clone())
             .port(config.port)
             .user(String::from("source"))
@@ -382,7 +389,14 @@ fn handle_samples<T>(
     let (left, right) = calculate_rms_levels(&input, channels);
     let _ = &bus.send(VolumeChange { left, right }).expect("Could not update volume");
 
-    if left > -55.0 || right > -55.0 {
+    let read_state = {
+        state.blocking_read().clone()
+    };
+
+    if
+        left > read_state.config.audio.silence_threshold ||
+        right > read_state.config.audio.silence_threshold
+    {
         // TODO(config)
         if !desire_to_broadcast.load(Ordering::Relaxed) {
             println!("Audio is now available!");
@@ -392,11 +406,11 @@ fn handle_samples<T>(
             (*state).is_audio_present = true;
         }
         *audio_last_seen = SystemTime::now();
-    }
-    // Before we do anything else, verify that we should still be recording/streaming
-    // TODO(config): 15 seconds needs to be configured (and usually much longer)
-    else if
-        SystemTime::now().duration_since(*audio_last_seen).unwrap().as_secs() > 15
+    } else if
+        // Before we do anything else, verify that we should still be recording/streaming
+        // TODO(config): 15 seconds needs to be configured (and usually much longer)
+        SystemTime::now().duration_since(*audio_last_seen).unwrap().as_secs() >
+        (read_state.config.audio.silence_duration_before_deactivation as u64)
     {
         if desire_to_broadcast.load(Ordering::Relaxed) {
             println!("There has been 15 seconds of silence!");

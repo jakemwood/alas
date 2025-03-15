@@ -24,6 +24,7 @@ pub struct AlasWiFiConfig {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AlasAudioConfig {
     pub silence_duration_before_deactivation: u32,
+    pub silence_threshold: f32,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -48,6 +49,11 @@ pub fn load_config() -> AlasConfig {
     serde_json::from_reader(config_file).expect("Could not load configuration file")
 }
 
+pub async fn load_config_async() -> AlasConfig {
+    let config_file =   tokio::fs::read("config.json").await.expect("File should be read");
+    serde_json::from_slice(&config_file).expect("Could not load configuration file")
+}
+
 pub fn save_config(config: &AlasConfig) {
     let serialized_config = serde_json
         ::to_string_pretty(config)
@@ -55,4 +61,11 @@ pub fn save_config(config: &AlasConfig) {
 
     let mut config_file = fs::File::create("config.json").expect("File should be open");
     config_file.write(serialized_config.as_bytes()).expect("File should be write");
+}
+
+pub async fn save_config_async(config: &AlasConfig) {
+    let serialized_config = serde_json::to_string_pretty(config)
+        .expect("Could not stringify config");
+
+    tokio::fs::write("config.json", &serialized_config).await.expect("File should be write");
 }

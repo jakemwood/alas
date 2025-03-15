@@ -5,7 +5,6 @@ use alas_lib::state::SafeState;
 use menu_screen::MenuScreen;
 use screen::Screen;
 use serialport::{ DataBits, FlowControl, Parity, SerialPort, StopBits };
-use std::any::Any;
 use std::io::{ self, Read, Write };
 use std::sync::Arc;
 use std::time::Duration;
@@ -21,9 +20,9 @@ mod matrix_orbital;
 mod menu_screen;
 mod screen;
 
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>());
-}
+// fn print_type_of<T>(_: &T) {
+//     println!("{}", std::any::type_name::<T>());
+// }
 
 async fn handle_message(
     current_state: DisplayState,
@@ -163,7 +162,7 @@ pub async fn start(
     mut lcd_rx: Receiver<AlasMessage>,
     shared_state: &SafeState
 ) -> (JoinHandle<()>, JoinHandle<()>) {
-    let mut display_state: DisplayState = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
+    let display_state: DisplayState = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
 
     let mut port = connect();
     // port is safe to clone, but ideally have a read/write clone
@@ -222,7 +221,7 @@ pub async fn start(
                     let mut buf = [0; 1];
                     // let bytes_read = read_port.read(buf.as_mut_slice());
                     match loop_port.read(buf.as_mut_slice()) {
-                        Ok(bytes_read) => Ok(buf[0]),
+                        Ok(_bytes_read) => Ok(buf[0]),
                         Err(e) => Err(e)
                     }
                 }) => {

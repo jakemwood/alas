@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useStore } from "../lib/store";
 import { useApi } from "../lib/api";
 
@@ -6,9 +6,25 @@ export function Audio() {
   const { audioConfig, setAudioConfig } = useStore();
   const api = useApi();
 
+  useEffect(() => {
+    /*
+    pub silence_duration_before_deactivation: u32,
+    pub silence_threshold: f32,
+    */
+    api.getAudioConfig().then((response) => {
+      setAudioConfig({
+        silenceDuration: response.silence_duration_before_deactivation,
+        silenceThreshold: response.silence_threshold,
+      });
+    });
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.updateAudioConfig(audioConfig);
+    await api.updateAudioConfig({
+      silence_duration_before_deactivation: parseInt(audioConfig.silenceDuration),
+      silence_threshold: parseInt(audioConfig.silenceThreshold),
+    });
   };
 
   return (
@@ -30,7 +46,7 @@ export function Audio() {
             onChange={(e) =>
               setAudioConfig({
                 ...audioConfig,
-                silenceDuration: parseInt(e.target.value),
+                silenceDuration: e.target.value,
               })
             }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -48,34 +64,13 @@ export function Audio() {
             onChange={(e) =>
               setAudioConfig({
                 ...audioConfig,
-                silenceThreshold: parseInt(e.target.value),
+                silenceThreshold: e.target.value,
               })
             }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
           <p className="mt-1 text-sm text-gray-500">
             Audio levels below this threshold will be considered silence
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Audio Present Threshold (dB)
-          </label>
-          <input
-            type="number"
-            max="0"
-            value={audioConfig.audioThreshold}
-            onChange={(e) =>
-              setAudioConfig({
-                ...audioConfig,
-                audioThreshold: parseInt(e.target.value),
-              })
-            }
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            Audio levels above this threshold will be considered active audio
           </p>
         </div>
 

@@ -5,12 +5,17 @@ export function useApi() {
   const API_BASE = `http://${authStore.ipAddress}`;
   return {
     async getNetworkConfig() {
-      const res = await fetch(`${API_BASE}/network`);
+      const res = await fetch(`${API_BASE}/config/network`);
+      return res.json();
+    },
+
+    async getNetworkStatus() {
+      const res = await fetch(`${API_BASE}/status/network`);
       return res.json();
     },
 
     async updateNetworkConfig(config: any) {
-      const res = await fetch(`${API_BASE}/network`, {
+      const res = await fetch(`${API_BASE}/config/network`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -18,14 +23,19 @@ export function useApi() {
       return res.json();
     },
 
+    async getAudioStatus() {
+      const res = await fetch(`${API_BASE}/status/audio`);
+      return res.json();
+    },
+
     async getAudioConfig() {
-      const res = await fetch(`${API_BASE}/audio`);
+      const res = await fetch(`${API_BASE}/config/audio`);
       return res.json();
     },
 
     async updateAudioConfig(config: any) {
-      const res = await fetch(`${API_BASE}/audio`, {
-        method: "PUT",
+      const res = await fetch(`${API_BASE}/config/audio`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
       });
@@ -33,12 +43,12 @@ export function useApi() {
     },
 
     async getIcecastConfig() {
-      const res = await fetch(`${API_BASE}/icecast`);
+      const res = await fetch(`${API_BASE}/config/icecast`);
       return res.json();
     },
 
     async updateIcecastConfig(config: any) {
-      const res = await fetch(`${API_BASE}/icecast`, {
+      const res = await fetch(`${API_BASE}/config/icecast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -62,7 +72,7 @@ export function useApi() {
     },
 
     subscribeToVolumeUpdates(callback: (volume: number) => void) {
-      const eventSource = new EventSource(`${API_BASE}/audio/volume`);
+      const eventSource = new EventSource(`${API_BASE}/status/meter`);
       eventSource.onmessage = (event) => {
         callback(parseFloat(event.data));
       };
