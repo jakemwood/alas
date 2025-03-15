@@ -14,12 +14,12 @@ use tokio::sync::{ broadcast, RwLock };
 
 #[tokio::main]
 async fn main() {
+    // TODO: this was originally designed to be Redux-like but then it turned evil. Refactor.
     let state = Arc::new(RwLock::new(AlasState::new()));
     let (event_bus, _) = broadcast::channel::<AlasMessage>(256);
 
     let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
     let cell_changes = cell_observer.listen().await;
-    // TODO: consider refactoring to something Redux-like
 
     let lcd_rx = event_bus.subscribe();
     let (lcd_rx_thread, lcd_tx_thread) = lcd_display::start(lcd_rx, &state).await;
