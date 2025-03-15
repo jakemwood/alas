@@ -17,8 +17,8 @@ jobs:
     - run: sudo apt-get -y install alsa-base alsa-utils libasound2-dev libudev-dev
     - uses: actions/checkout@v4
     - name: Build
-        run: cargo build --verbose
-        working_directory: alas
+      run: cargo build --verbose
+      working_directory: alas
     - name: Run tests
-        run: cargo test --verbose
-        working_directory: alas
+      run: cargo test --verbose
+      working_directory: alas
