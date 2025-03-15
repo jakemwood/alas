@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: sudo apt-get -y install alsa-base alsa-utils libasound2-dev libudev-dev
+        run: sudo apt-get -y install pkg-config libssl-dev ca-certificates libasound2-dev libpulse-dev libdbus-1-dev portaudio19-dev libudev-dev libshout3-dev
 
       - name: Checkout repository
         uses: actions/checkout@v4
