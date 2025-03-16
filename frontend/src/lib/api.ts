@@ -78,5 +78,19 @@ export function useApi() {
       };
       return () => eventSource.close();
     },
+
+    async getRedundancyConfig() {
+      const res = await fetch(`${API_BASE}/config/redundancy`);
+      return res.json();
+    },
+
+    async updateRedundancyConfig(config: any) {
+      const res = await fetch(`${API_BASE}/config/redundancy`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      return res.json();
+    },
   };
 }

@@ -7,6 +7,14 @@ use alas_lib::cellular::connect_to_cellular;
 use alas_lib::config::{load_config_async, save_config_async, AlasAudioConfig, AlasIcecastConfig};
 use alas_lib::state::{AlasMessage, SafeState};
 use alas_lib::wifi::WiFiNetwork;
+use serde_yaml;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct AlasRedundancyConfig {
+    pub server_ip: String,
+    pub port: u16,
+    pub public_key: String,
+}
 
 #[get("/audio")]
 async fn get_audio_config() -> Json<AlasAudioConfig> {
@@ -85,6 +93,62 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
     Status::Created
 }
 
+#[get("/redundancy")]
+async fn get_redundancy_config() -> Json<AlasRedundancyConfig> {
+    use std::fs;
+    use std::process::Command;
+
+    // Try to read WireGuard config with sudo
+    let wg_config = match Command::new("sudo")
+        .args(["cat", "/etc/wireguard/wg0.conf"])
+        .output() {
+            Ok(output) => String::from_utf8_lossy(&output.stdout).to_string(),
+            Err(_) => String::new()
+        };
+
+    // Parse the config file content
+    let mut server_ip = String::new();
+    let mut port = 0;
+    let mut public_key = String::new();
+
+    for line in wg_config.lines() {
+        let line = line.trim();
+        if line.starts_with("PublicKey = ") {
+            public_key = line.replace("PublicKey = ", "").trim().to_string();
+        }
+    }
+
+    // Read engarde.yml config
+    let engarde_config = {
+        tokio::fs::read_to_string("engarde.yml").await.unwrap_or_else(|_| String::new())
+    };
+
+    // Parse the YAML content
+    if let Ok(yaml) = serde_yaml::from_str::<serde_yaml::Value>(&engarde_config) {
+        if let Some(client) = yaml.get("client") {
+            if let Some(dst_addr) = client.get("dstAddr") {
+                if let Some(addr_str) = dst_addr.as_str() {
+                    // Parse the dstAddr string which should be in format "ip:port"
+                    if let Some((ip, port_str)) = addr_str.split_once(':') {
+                        server_ip = ip.to_string();
+                        if let Ok(p) = port_str.parse::<u16>() {
+                            port = p;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Json(AlasRedundancyConfig {
+        server_ip,
+        port,
+        public_key
+    })
+    // let config = load_config_async().await;
+    // Json(config.redundancy)
+}
+
 pub fn routes() -> Vec<Route> {
     routes![
         available_wifi,
@@ -93,5 +157,6 @@ pub fn routes() -> Vec<Route> {
         set_icecast_config,
         get_audio_config,
         set_audio_config,
+        get_redundancy_config,
     ]
 }

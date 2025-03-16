@@ -8,6 +8,7 @@ import { Network } from "./pages/Network";
 import { Audio } from "./pages/Audio";
 import { Icecast } from "./pages/Icecast";
 import { Settings } from "./pages/Settings";
+import { Redundancy } from "./pages/Redundancy";
 import { makeServer } from "./lib/mock-server";
 
 // @ts-ignore
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="network" element={<Network />} />
           <Route path="audio" element={<Audio />} />
           <Route path="icecast" element={<Icecast />} />
+          <Route path="redundancy" element={<Redundancy />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

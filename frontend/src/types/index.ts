@@ -23,6 +23,12 @@ export interface IcecastConfig {
   password: string;
 }
 
+export interface RedundancyConfig {
+  serverIp: string;
+  port: number;
+  publicKey: string;
+}
+
 export interface SystemStatus {
   network: {
     wifiConnected: boolean;

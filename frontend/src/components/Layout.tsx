@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Settings, Wifi, Volume2, Radio, LogOut, Key } from "lucide-react";
+import { Settings, Wifi, Volume2, Radio, LogOut, Key, Share2 } from "lucide-react";
 import { useAuthStore } from "../lib/auth-store";
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { path: "/network", label: "Network", icon: Wifi },
   { path: "/audio", label: "Audio", icon: Volume2 },
   { path: "/icecast", label: "Icecast", icon: Radio },
+  { path: "/redundancy", label: "Redundancy", icon: Share2 },
   { path: "/settings", label: "Settings", icon: Key },
 ];
 

@@ -4,16 +4,19 @@ import type {
   AudioConfig,
   IcecastConfig,
   SystemStatus,
+  RedundancyConfig,
 } from "../types";
 
 interface AppState {
   networkConfig: NetworkConfig;
   audioConfig: AudioConfig;
   icecastConfig: IcecastConfig;
+  redundancyConfig: RedundancyConfig;
   systemStatus: SystemStatus;
   setNetworkConfig: (config: NetworkConfig) => void;
   setAudioConfig: (config: AudioConfig) => void;
   setIcecastConfig: (config: IcecastConfig) => void;
+  setRedundancyConfig: (config: RedundancyConfig) => void;
   updateSystemStatus: (status: Partial<SystemStatus>) => void;
 }
 
@@ -34,6 +37,11 @@ export const useStore = create<AppState>((set) => ({
     mountPoint: "",
     password: "",
   },
+  redundancyConfig: {
+    serverIp: "",
+    port: 8080,
+    publicKey: "",
+  },
   systemStatus: {
     network: {
       wifiConnected: false,
@@ -51,6 +59,7 @@ export const useStore = create<AppState>((set) => ({
   setNetworkConfig: (config) => set({ networkConfig: config }),
   setAudioConfig: (config) => set({ audioConfig: config }),
   setIcecastConfig: (config) => set({ icecastConfig: config }),
+  setRedundancyConfig: (config) => set({ redundancyConfig: config }),
   updateSystemStatus: (status) =>
     set((state) => {
       return { systemStatus: { ...state.systemStatus, ...status }}
