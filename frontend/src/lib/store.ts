@@ -3,8 +3,8 @@ import type {
   NetworkConfig,
   AudioConfig,
   IcecastConfig,
-  SystemStatus,
   RedundancyConfig,
+  SystemStatus,
 } from "../types";
 
 interface AppState {
@@ -39,7 +39,7 @@ export const useStore = create<AppState>((set) => ({
   },
   redundancyConfig: {
     serverIp: "",
-    port: 8080,
+    port: 56882,
     publicKey: "",
   },
   systemStatus: {

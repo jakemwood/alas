@@ -47,7 +47,7 @@ export function Redundancy() {
               })
             }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="192.168.1.100"
+            placeholder="10.88.7.101"
           />
         </div>
 
@@ -65,7 +65,7 @@ export function Redundancy() {
               })
             }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="8080"
+            placeholder="56882"
           />
         </div>
 
@@ -81,9 +81,9 @@ export function Redundancy() {
                 publicKey: e.target.value,
               })
             }
-            rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="Enter public key..."
+            rows={3}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
+            placeholder="Enter WireGuard public key..."
           />
         </div>
 

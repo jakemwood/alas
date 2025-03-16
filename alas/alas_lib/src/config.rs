@@ -39,7 +39,6 @@ pub struct AlasConfig {
     pub icecast: AlasIcecastConfig,
     pub cellular: AlasCellularConfig,
     pub wifi: AlasWiFiConfig,
-
     pub auth: Option<AlasAuthenticationConfig>,
 }
 

@@ -7,8 +7,8 @@ import { Dashboard } from "./pages/Dashboard";
 import { Network } from "./pages/Network";
 import { Audio } from "./pages/Audio";
 import { Icecast } from "./pages/Icecast";
-import { Settings } from "./pages/Settings";
 import { Redundancy } from "./pages/Redundancy";
+import { Settings } from "./pages/Settings";
 import { makeServer } from "./lib/mock-server";
 
 // @ts-ignore
