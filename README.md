@@ -1,4 +1,7 @@
-![ALAS Logo](docs/logo.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo-white.svg">
+  <img alt="alas logo" src="docs/logo.svg">
+</picture>
 
 # ALAS (Automatic Live Audio Streamer)
 
