@@ -1,10 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useStore } from "../lib/store";
 import { useApi } from "../lib/api";
 
 export function Network() {
   const api = useApi();
   const { networkConfig, setNetworkConfig } = useStore();
+
+  useEffect(() => {
+    api.getNetworkStatus().then(results => {
+      setNetworkConfig({
+        ...networkConfig,
+        imei: results.imei,
+      });
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +66,14 @@ export function Network() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
+                IMEI
+              </label>
+            </div>
+            <div>
+              {networkConfig.imei}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
                 Name
               </label>
               <input
@@ -66,38 +83,6 @@ export function Network() {
                   setNetworkConfig({
                     ...networkConfig,
                     apn: { ...networkConfig.apn, name: e.target.value },
-                  })
-                }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-              <input
-                type="text"
-                value={networkConfig.apn.username}
-                onChange={(e) =>
-                  setNetworkConfig({
-                    ...networkConfig,
-                    apn: { ...networkConfig.apn, username: e.target.value },
-                  })
-                }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                type="password"
-                value={networkConfig.apn.password}
-                onChange={(e) =>
-                  setNetworkConfig({
-                    ...networkConfig,
-                    apn: { ...networkConfig.apn, password: e.target.value },
                   })
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"

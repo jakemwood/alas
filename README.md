@@ -1,3 +1,5 @@
+![ALAS Logo](docs/logo.svg)
+
 # ALAS (Automatic Live Audio Streamer)
 
 ## Support / Donationware

@@ -38,9 +38,16 @@ async fn find_device(conn: &Connection) -> DeviceProxy {
     DeviceProxy::new(&conn, path.clone()).await.expect("Could not connect to device")
 }
 
-async fn find_modem_device(conn: &Connection) -> ModemProxy {
-    let path = list_modems().await.unwrap().first().unwrap().to_owned();
-    ModemProxy::new(&conn, path.clone()).await.expect("Could not connect to device")
+async fn find_modem_device(conn: &Connection) -> Option<ModemProxy> {
+    let path = list_modems().await.unwrap();
+    let path = path.first();
+    if let Some(path) = path {
+        let path = path.to_owned();
+        Some(ModemProxy::new(&conn, path.clone()).await.expect("Could not connect to device"))
+    }
+    else {
+        None
+    }
 }
 
 async fn list_modems() -> Result<Vec<OwnedObjectPath>, Box<dyn std::error::Error>> {
@@ -60,7 +67,13 @@ async fn list_modems() -> Result<Vec<OwnedObjectPath>, Box<dyn std::error::Error
     )
 }
 
-pub async fn connect_to_cellular() {
+pub async fn get_imei() -> Option<String> {
+    let conn = Connection::system().await.expect("No connection");
+    let modem = find_modem_device(&conn).await.expect("No modem found");
+    Some(modem.equipment_identifier().await.unwrap().to_string())
+}
+
+pub async fn connect_to_cellular(apn_name: String) {
     // Establish a D-Bus connection to the system bus
     let connection = Connection::system().await.expect("No D-bus");
 
@@ -73,7 +86,7 @@ pub async fn connect_to_cellular() {
 
     // Define the GSM connection settings
     let mut gsm_settings = HashMap::new();
-    gsm_settings.insert("apn", Value::from("super"));
+    gsm_settings.insert("apn", Value::from(apn_name));
 
     let mut connection_settings = HashMap::new();
     connection_settings.insert("id", Value::from("1-gsm"));
@@ -113,28 +126,50 @@ impl CellObserver {
 
         tokio::spawn(async move {
             let connection = Connection::system().await.expect("Could not get bus");
-            let device = find_modem_device(&connection).await;
+            let mut device = find_modem_device(&connection).await;
+
+            while device.is_none() {
+                println!("📲 Sleeping for 60 seconds before looking for cellular modem...");
+                select! {
+                    _ = tokio::time::sleep(Duration::from_secs(30)) => {
+                        device = find_modem_device(&connection).await;
+                    },
+                    _ = signal::ctrl_c() => {
+                        println!("✅ Stopped looking for cell phone");
+                        return;
+                    }
+                }
+            }
+
+            let device = device.unwrap();
 
             let mut state_change_stream = device
                 .receive_signal_state_changed().await
                 .expect("Could not start stream");
 
-            println!("Starting cellular status loop");
+            println!("📲 Starting cellular status loop");
             loop {
                 select! {
                     Some(msg) = state_change_stream.next() => {
                         let quality = Self::get_quality().await;
-                        self.set_current_state(msg.args().unwrap().new, quality).await;
-                        println!("New state: {:?}", msg);
+
+                        let state_change_msg = msg.args().unwrap();
+                        let old_state = state_change_msg.old;
+                        let new_state = state_change_msg.new;
+                        let reason = state_change_msg.reason;
+
+                        self.set_current_state(new_state, quality).await;
+
+                        println!("📲 Old state: {:?} New state: {:?} Reason: {:?}",
+                            old_state, new_state, reason);
                     },
                     _ = time::sleep(Duration::from_secs(5)) => {
                         let current_state = CellObserver::get_current_state().await;
                         let quality = Self::get_quality().await;
                         if let Some(current_state) = current_state {
-                            println!("{:?} {:?}", current_state, quality);
                             self.set_current_state(current_state, quality).await;
                         } else {
-                            println!("There is no cellular state!!!");
+                            println!("📲 There is no cellular state!!!");
                         }
                     },
                     _ = signal::ctrl_c() => {
@@ -143,19 +178,19 @@ impl CellObserver {
                 }
             }
 
-            println!("Exiting cellular loop");
+            println!("📲 Exiting cellular loop");
         })
     }
 
     async fn get_quality() -> u32 {
         let conn = Connection::system().await.expect("Could not connect to D-bus");
-        let device = find_modem_device(&conn).await;
+        let device = find_modem_device(&conn).await.expect("No modem found");
         device.signal_quality().await.unwrap().0
     }
 
     async fn get_current_state() -> Option<i32> {
         let conn = Connection::system().await.expect("Could not connect to D-bus");
-        let device = find_modem_device(&conn).await;
+        let device = find_modem_device(&conn).await.expect("No modem found");
         match device.state().await {
             Ok(state) => { Some(state) }
             Err(err) => {

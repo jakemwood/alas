@@ -21,10 +21,11 @@ export const useStore = create<AppState>((set) => ({
   networkConfig: {
     wifi: { ssid: "", password: "" },
     apn: { name: "", username: "", password: "" },
+    imei: "",
   },
   audioConfig: {
-    silenceDuration: 30,
-    silenceThreshold: -50,
+    silenceDuration: "30",
+    silenceThreshold: "-50",
     audioThreshold: -40,
   },
   icecastConfig: {

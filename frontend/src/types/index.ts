@@ -8,6 +8,7 @@ export interface NetworkConfig {
     username: string;
     password: string;
   };
+  imei: string | null;
 }
 
 export interface AudioConfig {

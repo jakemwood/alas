@@ -6,6 +6,7 @@ use rocket::serde::Serialize;
 use tokio::select;
 use tokio::sync::broadcast::Sender;
 use tokio::time::Instant;
+use alas_lib::cellular::get_imei;
 use alas_lib::state::{AlasMessage, SafeState};
 
 #[derive(Serialize)]
@@ -14,16 +15,19 @@ struct NetworkStatus {
     wifi_connected: bool,
     cell_connected: bool,
     cell_strength: u32,
+    imei: Option<String>,
 }
 
 #[get("/network")]
 async fn get_network_status(alas_state: &State<SafeState>) -> Json<NetworkStatus> {
     let state = alas_state.read().await;
+    let imei = get_imei().await;
 
     Json(NetworkStatus {
         wifi_connected: state.wifi_on,
         cell_connected: state.cell_on,
         cell_strength: state.cell_strength,
+        imei,
     })
 }
 

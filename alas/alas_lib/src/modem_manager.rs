@@ -49,6 +49,10 @@ pub trait Modem {
     #[zbus(property)]
     fn sim(&self) -> Result<ObjectPath, zbus::Error>;
 
+    /// EquipmentIdentifier property
+    #[zbus(property)]
+    fn equipment_identifier(&self) -> zbus::Result<String>;
+
     #[zbus(property)]
     fn signal_quality(&self) -> Result<(u32, bool), zbus::Error>;
 

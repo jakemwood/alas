@@ -3,6 +3,7 @@ use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Sender;
+use alas_lib::cellular::connect_to_cellular;
 use alas_lib::config::{load_config_async, save_config_async, AlasAudioConfig, AlasIcecastConfig};
 use alas_lib::state::{AlasMessage, SafeState};
 use alas_lib::wifi::WiFiNetwork;
@@ -25,6 +26,17 @@ async fn set_audio_config(
     state.update_config(new_config);
     let _ = bus.send(AlasMessage::StreamingConfigUpdated);
     Json(state.config.audio.clone())
+}
+
+#[derive(Deserialize)]
+struct SetCellularSettings {
+    apn: String
+}
+
+#[post("/cellular", data = "<request>")]
+async fn set_cellular_config(request: Json<SetCellularSettings>) -> Status {
+    connect_to_cellular(request.apn.clone()).await;
+    Status::Ok
 }
 
 #[get("/icecast")]
