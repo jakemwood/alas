@@ -61,7 +61,7 @@ server:
 EOF
 
 # Create systemd service for EnGarde
-echo "Creating systemd service for EnGarde..."
+echo "Creating systemd service for Engarde..."
 sudo bash -c "cat > $SYSTEMD_SERVICE" <<EOF
 [Unit]
 Description=Engarde Server
@@ -82,7 +82,7 @@ EOF
 
 # Reload systemd, enable and start EnGarde service
 sudo systemctl daemon-reload
-sudo systemctl enable --now engarde
+sudo systemctl enable --now engarde-server
 
 # Output the WireGuard public key
 echo "WireGuard server setup complete!"
