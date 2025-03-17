@@ -21,8 +21,7 @@ async fn main() {
     let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
     let cell_changes = cell_observer.listen().await;
 
-    let lcd_rx = event_bus.subscribe();
-    let (lcd_rx_thread, lcd_tx_thread) = lcd_display::start(lcd_rx, &state).await;
+    let lcd_thread = lcd_display::start(event_bus.clone(), &state).await;
 
     let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
     let wifi_changes = wifi_observer.listen();
@@ -47,10 +46,8 @@ async fn main() {
     // LCD should always be last to exit so that we can display all messages
     println!("Waiting for web server to await...");
     web_server.await.expect("Oh well 3");
-    println!("Waiting for lcd rx to unwrap...");
-    lcd_rx_thread.await.expect("Oh well 4");
-    println!("Waiting for lcd tx to unwrap...");
-    lcd_tx_thread.await.expect("Oh well 5");
+    println!("Waiting for lcd to unwrap...");
+    lcd_thread.await.expect("Oh well 4");
     println!("Waiting for audio to unwrap...");
     let (config_thread, icecast, recording) = audio.await.expect("Oh well 6");
     println!("Waiting for config thread to unwrap...");
