@@ -205,12 +205,11 @@ async fn set_wireguard_config(config: AlasRedundancyConfig) {
 #[post("/redundancy", format = "json", data = "<request>")]
 async fn set_redundancy_config(
     request: Json<AlasRedundancyConfig>,
-    state: &State<SafeState>,
     bus: &State<Sender<AlasMessage>>
 ) -> Status {
     // Update the WireGuard config file
-    set_wireguard_config(request.to_inner()).await;
-    set_engarde_config(request.into_inner()).await;
+    set_wireguard_config(request.clone().into_inner()).await;
+    set_engarde_config(request.clone().into_inner()).await;
 
     // Restart WireGuard and Engarde services
     let _ = Command::new("sudo")
