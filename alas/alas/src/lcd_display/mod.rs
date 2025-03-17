@@ -255,10 +255,10 @@ async fn try_and_connect_to_serial_port(bus: &Sender<AlasMessage>, shared_state:
     println!("📖✏️ Joined on our threads!");
 
     if write_results.is_ok() && read_results.is_ok() {
-        println!("❌ EXITED!");
+        println!("✅ LCD writer and reader exited okay!");
         true
     } else {
-        println!("❌ Didn't exit: {:?} {:?}", write_results.is_ok(), read_results.is_ok());
+        println!("❌ LCD writer/reader crashed: {:?} {:?}", write_results.is_ok(), read_results.is_ok());
         false
     }
 }

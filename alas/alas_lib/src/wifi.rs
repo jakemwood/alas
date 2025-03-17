@@ -334,7 +334,7 @@ impl WiFiObserver {
     }
 
     async fn get_current_wifi_state() -> Option<u32> {
-        println!("getting current state!");
+        println!("🛜 Getting current state!");
         let conn = Connection::system().await.expect("Could not connect to D-bus");
         let wifi_device = get_wifi_device_as_device(&conn).await;
         match wifi_device.state().await {

@@ -88,9 +88,11 @@ pub async fn start(
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        println!("Default sample rate: {:?}", audio_device_config.sample_rate());
-        println!("Default sample format: {:?}", audio_device_config.sample_format());
-        println!("Default sample size: {:?}", audio_device_config.sample_format().sample_size());
+        println!("🔊 Default sample rate: {:?} format: {:?} sample size: {:?}",
+                 audio_device_config.sample_rate(),
+                 audio_device_config.sample_format(),
+                 audio_device_config.sample_format().sample_size()
+        );
         let mut exit_bus = bus.subscribe();
 
         let stream = match audio_device_config.sample_format() {
