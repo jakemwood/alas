@@ -8,6 +8,7 @@ use tokio::sync::broadcast::Sender;
 use tokio::time::Instant;
 use alas_lib::cellular::get_imei;
 use alas_lib::state::{AlasMessage, SafeState};
+use crate::web_server::auth::Authenticated;
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -40,7 +41,7 @@ struct AudioStatus {
 }
 
 #[get("/audio")]
-async fn get_audio_state(state: &State<SafeState>) -> Json<AudioStatus> {
+async fn get_audio_state(state: &State<SafeState>, jwt: Authenticated) -> Json<AudioStatus> {
     let state = state.read().await;
     Json(AudioStatus {
         audio_present: state.is_audio_present,

@@ -18,8 +18,8 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      await authApi.login({ ipAddress, password });
-      login(ipAddress);
+      const response = await authApi.login({ ipAddress, password });
+      login(ipAddress, response.jwt);
       navigate("/");
     } catch (err) {
       console.error(err);

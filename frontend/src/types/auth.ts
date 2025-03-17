@@ -6,4 +6,5 @@ export interface AuthCredentials {
 export interface AuthState {
   isAuthenticated: boolean;
   ipAddress: string;
+  jwt: string;
 }

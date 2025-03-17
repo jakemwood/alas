@@ -1,13 +1,14 @@
 use rocket::http::{ Status };
 use rocket::serde::json::{ serde_json, Json };
 use rocket::serde::{ Deserialize, Serialize };
-use rocket::{post, routes, Route};
+use rocket::{post, routes, Request, Route};
 use tokio::{ fs };
 use bcrypt::{ hash, verify, DEFAULT_COST };
-use jsonwebtoken::{ encode, EncodingKey, Header as JWTHeader };
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header as JWTHeader, Validation};
 use chrono::{ Utc as ChronoUtc, Duration as ChronoDuration };
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use rocket::request::{FromRequest, Outcome};
 use alas_lib::config::{load_config_async, save_config, AlasAuthenticationConfig, AlasConfig};
 
 /// Structure for the incoming login request payload.
@@ -34,20 +35,47 @@ fn generate_jwt_secret() -> String {
     rand::thread_rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect()
 }
 
+pub struct Authenticated {}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for Authenticated {
+    type Error = ();
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let config = load_config_async().await;
+        if config.auth.is_none() {
+            return Outcome::Success(Authenticated {});
+        }
+        let jwt_secret = config.auth.unwrap().jwt_secret;
+        // let key = EncodingKey::from_secret(jwt_secret.as_ref());
+
+        match request.headers().get_one("authorization") {
+            None => {
+                Outcome::Error((Status::Unauthorized, ()))
+            },
+            Some(key) => {
+                let token = key.trim_start_matches("Bearer ").trim();
+                match decode::<Claims>(
+                    token,
+                    &DecodingKey::from_secret(jwt_secret.as_ref()),
+                    &Validation::new(Algorithm::HS256)
+                ) {
+                    Ok(_) => Outcome::Success(Authenticated {}),
+                    Err(_) => Outcome::Error((Status::Unauthorized, ())),
+                }
+            }
+        }
+    }
+}
+
 /// POST /auth/login
 ///
 /// Reads "config.json" for a hashed password and JWT secret. If the provided
 /// password matches (via bcrypt), it returns a JWT valid for one hour. Otherwise,
 /// returns a 401 Unauthorized.
-#[post("/auth/login", format = "json", data = "<login_request>")]
+#[post("/login", format = "json", data = "<login_request>")]
 async fn login(login_request: Json<LoginRequest>) -> Result<Json<JwtResponse>, Status> {
-    // Load the config.yaml file
-    let config_str = fs
-    ::read_to_string("config.json").await
-        .map_err(|_| Status::InternalServerError)?;
-    let mut config: AlasConfig = serde_json
-    ::from_str(&config_str)
-        .map_err(|_| Status::InternalServerError)?;
+    let mut config = load_config_async().await;
 
     // Create a JWT claim with expiration one hour from now
     let expiration = ChronoUtc::now() + ChronoDuration::hours(1);
@@ -118,7 +146,7 @@ struct ChangePasswordRequest {
     new_password: String,
 }
 
-#[post("/auth/change-password", format = "json", data = "<request>")]
+#[post("/change-password", format = "json", data = "<request>")]
 async fn change_password(request: Json<ChangePasswordRequest>) -> Result<Status, Status> {
     let mut config = load_config_async().await;
 
