@@ -69,7 +69,7 @@ async fn list_modems() -> Result<Vec<OwnedObjectPath>, Box<dyn std::error::Error
 
 pub async fn get_imei() -> Option<String> {
     let conn = Connection::system().await.expect("No connection");
-    let modem = find_modem_device(&conn).await.expect("No modem found");
+    let modem = find_modem_device(&conn).await?;
     Some(modem.equipment_identifier().await.unwrap().to_string())
 }
 
