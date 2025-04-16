@@ -18,3 +18,5 @@ jsonwebtoken = "9.3.1"
 bcrypt = "0.17.0"
 rand = "0.8.5"
 rocket_cors = "0.6.0"
+dropbox-sdk = {  version = "0.19.1", features=["default_client"] }
+uuid = { version = "1.11.0", features = ["v4"] }

@@ -1,5 +1,5 @@
 use crate::lcd_display::matrix_orbital;
-use crate::lcd_display::matrix_orbital::TOP_LEFT_BUTTON;
+use crate::lcd_display::matrix_orbital::{CENTER_BUTTON, TOP_LEFT_BUTTON};
 use crate::lcd_display::menu_screen::MenuScreen;
 use crate::lcd_display::screen::Screen;
 use alas_lib::state::AlasMessage;
@@ -8,6 +8,7 @@ use serialport::SerialPort;
 use std::any::Any;
 use std::io::Write;
 use alas_lib::wifi::AlasWiFiState;
+use crate::lcd_display::upload_progress::UploadScreen;
 
 impl Screen for HomeScreen {
     fn draw_screen(&self, port: &mut dyn Write) {
@@ -57,6 +58,8 @@ impl Screen for HomeScreen {
         // All buttons should open the menu
         if button == TOP_LEFT_BUTTON {
             Some(Box::new(MenuScreen::new()))
+        } else if button == CENTER_BUTTON {
+            Some(Box::new(UploadScreen { progress: 10 }))
         } else {
             None
         }
@@ -93,6 +96,11 @@ impl Screen for HomeScreen {
                         })
                     )
                 }
+            }
+            AlasMessage::UploadStateChange { new_state } => {
+                Some(
+                    Box::new(UploadScreen { progress: new_state.progress })
+                )
             }
             _ => None,
         }

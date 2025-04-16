@@ -21,6 +21,7 @@ pub struct AlasState {
     pub is_audio_present: bool,
     pub audio_last_seen: u64,
     pub config: AlasConfig,
+    pub upload_state: AlasUploadState,
 }
 
 impl AlasState {
@@ -34,6 +35,11 @@ impl AlasState {
             is_audio_present: false,
             audio_last_seen: 0,
             config: load_config(),
+            upload_state: AlasUploadState {
+                state: AlasUploadStatus::Idle,
+                progress: 0,
+                queue: Vec::new(),
+            },
         }
     }
 
@@ -71,9 +77,28 @@ impl AlasState {
                     password: "password".to_string(),
                 },
                 auth: None,
+                dropbox: None,
             },
+            upload_state: AlasUploadState {
+                state: AlasUploadStatus::Idle,
+                progress: 0,
+                queue: Vec::new(),
+            }
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum AlasUploadStatus {
+    InProgress,
+    Idle,
+}
+
+#[derive(Debug, Clone)]
+pub struct AlasUploadState {
+    pub state: AlasUploadStatus,
+    pub progress: u8,
+    pub queue: Vec<String>
 }
 
 #[derive(Debug, Clone)]
@@ -98,6 +123,9 @@ pub enum AlasMessage {
     StreamingStarted,
     StreamingStopped,
     StreamingConfigUpdated,
+    UploadStateChange {
+        new_state: AlasUploadState,
+    }
 }
 
 pub type UnsafeState = AlasState;

@@ -34,12 +34,19 @@ pub struct AlasAuthenticationConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct AlasDropboxConfig {
+    pub pkce_verifier: String,
+    pub access_token: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AlasConfig {
     pub audio: AlasAudioConfig,
     pub icecast: AlasIcecastConfig,
     pub cellular: AlasCellularConfig,
     pub wifi: AlasWiFiConfig,
     pub auth: Option<AlasAuthenticationConfig>,
+    pub dropbox: Option<AlasDropboxConfig>,
 }
 
 pub fn load_config() -> AlasConfig {

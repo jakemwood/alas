@@ -10,6 +10,7 @@ import { Icecast } from "./pages/Icecast";
 import { Redundancy } from "./pages/Redundancy";
 import { Settings } from "./pages/Settings";
 import { makeServer } from "./lib/mock-server";
+import DropboxLink from "./pages/DropboxLink";
 
 // @ts-ignore
 // if (process.env.NODE_ENV === 'development') {
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="icecast" element={<Icecast />} />
           <Route path="redundancy" element={<Redundancy />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="dropbox-link" element={<DropboxLink />} />
         </Route>
       </Routes>
     </BrowserRouter>

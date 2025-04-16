@@ -207,6 +207,9 @@ fn start_file_save_thread(
                 let _ = &file_bus.send(AlasMessage::RecordingStopped);
                 println!("Stopped recording");
             }
+
+            // Upload the file to Dropbox.
+
         }
 
         let _ = &file_bus.send(AlasMessage::RecordingStopped);

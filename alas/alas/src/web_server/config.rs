@@ -4,11 +4,16 @@ use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Sender;
 use alas_lib::cellular::connect_to_cellular;
-use alas_lib::config::{load_config_async, save_config_async, AlasAudioConfig, AlasIcecastConfig};
+use alas_lib::config::{load_config_async, save_config_async, AlasAudioConfig, AlasDropboxConfig, AlasIcecastConfig};
 use alas_lib::state::{AlasMessage, SafeState};
 use alas_lib::wifi::WiFiNetwork;
 use serde_yaml;
 use std::process::Command;
+use dropbox_sdk::default_client::{NoauthDefaultClient, UserAuthDefaultClient};
+use dropbox_sdk::files;
+use dropbox_sdk::Error::Api;
+use dropbox_sdk::oauth2::{Authorization, AuthorizeUrlBuilder, Oauth2Type, PkceCode};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AlasRedundancyConfig {
@@ -223,6 +228,74 @@ async fn set_redundancy_config(
     Status::Ok
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DropboxConfig {
+    pub code: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DropboxUrl {
+    pub url: String,
+}
+
+#[get("/dropbox-link")]
+async fn get_dropbox_link(state: &State<SafeState>) -> Json<DropboxUrl> {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    let pkce = match new_config.dropbox {
+        Some(val) => {
+            val.pkce_verifier
+        },
+        None => {
+            let pkce = PkceCode::new().code;
+            new_config.dropbox = Some(AlasDropboxConfig {
+                pkce_verifier: pkce.clone(),
+                access_token: None,
+            });
+            state.update_config(new_config);
+            pkce
+        }
+    };
+
+    let pkce_code = PkceCode { code: pkce };
+    let oauth_type = Oauth2Type::PKCE(pkce_code);
+
+    let url = AuthorizeUrlBuilder::new(
+        "bt0bmbyf7usblq4",
+        &oauth_type,
+    ).redirect_uri("http://localhost:5173/dropbox-link");
+    Json(DropboxUrl { url: url.build().to_string() })
+}
+
+#[post("/dropbox-link", format = "json", data = "<request>")]
+async fn dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState>) -> Status {
+    let code = request.code.clone();
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+
+    let pkce = PkceCode { code: new_config.dropbox.clone().unwrap().pkce_verifier };
+    let mut auth = Authorization::from_auth_code(
+        "bt0bmbyf7usblq4".to_string(),
+        Oauth2Type::PKCE(pkce),
+        code,
+        Some("http://localhost:5173/dropbox-link".to_string())
+    );
+
+    let token = auth.obtain_access_token_async(NoauthDefaultClient::default()).await.unwrap();
+    println!("📦 Got a token? {:?}", token);
+    let auth_saved = auth.save();
+    println!("📦 Attempting to save Dropbox token : {:?}", auth_saved);
+
+    new_config.dropbox = Some(AlasDropboxConfig {
+        pkce_verifier: new_config.dropbox.clone().unwrap().pkce_verifier,
+        access_token: auth_saved,
+
+    });
+    state.update_config(new_config);
+
+    Status::Ok
+}
+
 pub fn routes() -> Vec<Route> {
     routes![
         available_wifi,
@@ -233,5 +306,7 @@ pub fn routes() -> Vec<Route> {
         set_audio_config,
         get_redundancy_config,
         set_redundancy_config,
+        dropbox_link,
+        get_dropbox_link,
     ]
 }

@@ -95,5 +95,23 @@ export function useApi() {
       });
       return res.json();
     },
+
+    async getDropboxLink() {
+      const res = await fetch(`${API_BASE}/config/dropbox-link`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json", ...headers},
+      });
+      const reply = await res.json();
+      return reply.url;
+    },
+
+    async linkDropbox(code: string) {
+      const res = await fetch(`${API_BASE}/config/dropbox-link`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json", ...headers},
+        body: JSON.stringify({code}),
+      });
+      return res.status == 201
+    }
   };
 }
