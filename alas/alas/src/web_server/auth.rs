@@ -6,7 +6,7 @@ use tokio::{ fs };
 use bcrypt::{ hash, verify, DEFAULT_COST };
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header as JWTHeader, Validation};
 use chrono::{ Utc as ChronoUtc, Duration as ChronoDuration };
-use rand::distributions::Alphanumeric;
+use rand::distr::Alphanumeric;
 use rand::Rng;
 use rocket::request::{FromRequest, Outcome};
 use alas_lib::config::{load_config_async, save_config, AlasAuthenticationConfig, AlasConfig};

@@ -36,14 +36,14 @@ impl Screen for UploadScreen {
         match message {
             AlasMessage::UploadStateChange { new_state } => {
                 if new_state.state == AlasUploadStatus::Idle {
-                    Some(Box::new(HomeScreen::new(app_state)))
+                    Some(Box::new(HomeScreen::new(&app_state)))
                 }
                 else {
                     Some(Box::new(UploadScreen { progress: new_state.progress }))
                 }
             }
             AlasMessage::RecordingStarted => {
-                Some(Box::new(HomeScreen::new(app_state)))
+                Some(Box::new(HomeScreen::new(&app_state)))
             }
             _ => {
                 None

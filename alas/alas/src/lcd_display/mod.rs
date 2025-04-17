@@ -18,6 +18,7 @@ use tokio::{join, select, signal, task};
 use tokio::time::sleep;
 use udev::Enumerator;
 use udev::ffi::udev_monitor_filter_remove;
+use crate::lcd_display::home_screen::HomeScreen;
 
 mod home_screen;
 mod ip_screen;
@@ -209,7 +210,10 @@ async fn thread_start(
 }
 
 async fn try_and_connect_to_serial_port(bus: &Sender<AlasMessage>, shared_state: &SafeState) -> bool {
-    let display_state: DisplayState = Arc::new(RwLock::new(Box::new(MenuScreen::new())));
+    let copy_state = shared_state.read().await.clone();
+    let display_state: DisplayState = Arc::new(RwLock::new(Box::new(
+        HomeScreen::new(&copy_state)
+    )));
 
     let mut port = connect_stubborn().await;
     // port is safe to clone, but ideally have a read/write clone

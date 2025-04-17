@@ -25,3 +25,5 @@ mp3lame-encoder = "0.2.1"
 
 # Icecast
 shout = "0.2.1"
+dropbox-sdk = {  version = "0.19.1", features=["async_routes", "default_async_client"] }
+bytes = "1.8.0"

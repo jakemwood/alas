@@ -1,5 +1,6 @@
 pub mod audio;
 pub mod config;
+pub mod dropbox;
 mod modem_manager;
 mod network_manager;
 pub mod state;

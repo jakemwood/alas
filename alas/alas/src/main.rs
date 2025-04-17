@@ -11,6 +11,7 @@ use std::sync::Arc;
 use tokio;
 use tokio::signal;
 use tokio::sync::{ broadcast, RwLock };
+use alas_lib::dropbox::upload_file_to_dropbox;
 
 #[tokio::main]
 async fn main() {
@@ -32,6 +33,9 @@ async fn main() {
     let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
 
     // Wait for exit here! All code below is for clean-up!
+
+    // Test this!!
+    let dropbox = upload_file_to_dropbox("random_2gb.bin".to_string(), "/".to_string(), event_bus.clone()).await;
 
     signal::ctrl_c().await.expect("failed to listen for event");
     let _ = event_bus.send(AlasMessage::Exit);
