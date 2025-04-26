@@ -1,4 +1,4 @@
-25223505447445002
+25221759757250420
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -50217,13 +50217,6 @@ four-pin M8
 0
 6
 5
-Connector_USB
-C393950
-
-
-0
-8
-8
 Connector_USB
 USB3_A_Molex_48393-001
 USB 3.0, type A, right angle, http://www.molex.com/pdm_docs/sd/483930003_sd.pdf
