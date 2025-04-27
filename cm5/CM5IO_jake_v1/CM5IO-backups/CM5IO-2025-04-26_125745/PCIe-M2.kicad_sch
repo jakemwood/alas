@@ -3026,68 +3026,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Interface:C492353"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "MolexClip"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "KiCad:480994000"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "C492353_0_1"
-				(rectangle
-					(start -7.62 2.54)
-					(end 8.89 -2.54)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "LED_1"
 			(pin_numbers
 				(hide yes)
@@ -4679,16 +4617,6 @@
 	)
 	(wire
 		(pts
-			(xy 177.8 41.91) (xy 176.53 41.91)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1f163cde-ee5e-479b-809e-4b843b131ac7")
-	)
-	(wire
-		(pts
 			(xy 241.3 118.11) (xy 241.3 161.29)
 		)
 		(stroke
@@ -4706,6 +4634,16 @@
 			(type default)
 		)
 		(uuid "20acbfda-c45c-4c4d-be45-bcc9aa6e671a")
+	)
+	(wire
+		(pts
+			(xy 205.74 44.45) (xy 212.09 44.45)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "239a9965-84f5-4ef1-a1ee-db1906122ef7")
 	)
 	(wire
 		(pts
@@ -4799,16 +4737,6 @@
 	)
 	(wire
 		(pts
-			(xy 176.53 41.91) (xy 176.53 44.45)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "34ab75c5-0162-42f6-a436-68f81dbbfa07")
-	)
-	(wire
-		(pts
 			(xy 226.06 99.06) (xy 234.95 99.06)
 		)
 		(stroke
@@ -4896,16 +4824,6 @@
 			(type default)
 		)
 		(uuid "48bf02dd-69d6-45be-84f3-2903f93ce369")
-	)
-	(wire
-		(pts
-			(xy 176.53 44.45) (xy 212.09 44.45)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4a419ac9-1903-4217-aaf9-0ea2c329cab4")
 	)
 	(wire
 		(pts
@@ -5199,16 +5117,6 @@
 	)
 	(wire
 		(pts
-			(xy 176.53 46.99) (xy 176.53 49.53)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "764167d0-c9ea-448c-a51d-f8824d61b236")
-	)
-	(wire
-		(pts
 			(xy 135.89 137.16) (xy 142.24 137.16)
 		)
 		(stroke
@@ -5246,6 +5154,16 @@
 			(type default)
 		)
 		(uuid "7b6acbce-814f-4c28-8e2b-58e6b97760c1")
+	)
+	(wire
+		(pts
+			(xy 205.74 46.99) (xy 212.09 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7dd1b725-39c7-48bf-bf8f-432b34a3fa91")
 	)
 	(wire
 		(pts
@@ -5696,16 +5614,6 @@
 			(type default)
 		)
 		(uuid "b1f257b0-811b-4748-865e-f26a4195141d")
-	)
-	(wire
-		(pts
-			(xy 176.53 46.99) (xy 212.09 46.99)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b294ba5a-f864-4470-a444-6804bf835ef7")
 	)
 	(wire
 		(pts
@@ -6207,6 +6115,16 @@
 		)
 		(uuid "0478bf1d-cd6b-41f7-b47c-75cfeb74c0a7")
 	)
+	(label "USB_DP"
+		(at 205.74 44.45 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "052f6fc9-675b-4d58-9458-83136b598186")
+	)
 	(label "UART_TX"
 		(at 231.14 74.93 0)
 		(effects
@@ -6467,6 +6385,16 @@
 		)
 		(uuid "bf7bb8eb-1d40-4777-a8cf-8e9abda05cba")
 	)
+	(label "USB_DM"
+		(at 205.74 46.99 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "cbf0143e-8335-4513-aadd-d89fd4c44589")
+	)
 	(label "M2_3v3"
 		(at 276.86 46.99 0)
 		(effects
@@ -6579,17 +6507,6 @@
 		)
 		(uuid "3839fc26-2dcd-4fc0-9c27-1c64a09fc990")
 	)
-	(hierarchical_label "USB_DN"
-		(shape input)
-		(at 176.53 49.53 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "40f5092d-02e1-480d-8de2-9646db6562ee")
-	)
 	(hierarchical_label "EECLK"
 		(shape input)
 		(at 146.05 38.1 0)
@@ -6611,17 +6528,6 @@
 			(justify left)
 		)
 		(uuid "6b15c6b8-6f59-4589-8292-9007f7ae08b6")
-	)
-	(hierarchical_label "USB_DP"
-		(shape input)
-		(at 177.8 41.91 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "8d90e9c4-5f71-4ac4-af23-8dddc00b8dc3")
 	)
 	(hierarchical_label "USER_BUTTON"
 		(shape output)
@@ -10337,67 +10243,6 @@
 			(project "CM5IO"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/00000000-0000-0000-0000-00005ed4bb5b"
 					(reference "#PWR050")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Interface:C492353")
-		(at 181.61 20.32 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "6f454e46-2634-4c94-9b89-552849080d58")
-		(property "Reference" "MolexClip1"
-			(at 181.61 20.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "~"
-			(at 182.245 16.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "KiCad:480994000"
-			(at 181.61 20.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 181.61 20.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 181.61 20.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(instances
-			(project ""
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/00000000-0000-0000-0000-00005ed4bb5b"
-					(reference "MolexClip1")
 					(unit 1)
 				)
 			)
