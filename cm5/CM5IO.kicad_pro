@@ -681,7 +681,7 @@
       "plot": "gerber/",
       "pos_files": "BOM/",
       "specctra_dsn": "",
-      "step": "",
+      "step": "CM5IO.step",
       "svg": "SVG/",
       "vmrl": "",
       "vrml": ""
@@ -718,16 +718,22 @@
           "show": true
         },
         {
+          "group_by": true,
+          "label": "Footprint",
+          "name": "Footprint",
+          "show": true
+        },
+        {
           "group_by": false,
           "label": "Datasheet",
           "name": "Datasheet",
           "show": true
         },
         {
-          "group_by": true,
-          "label": "Footprint",
-          "name": "Footprint",
-          "show": true
+          "group_by": false,
+          "label": "Description",
+          "name": "Description",
+          "show": false
         },
         {
           "group_by": false,
@@ -736,15 +742,45 @@
           "show": true
         },
         {
-          "group_by": true,
-          "label": "DNP",
-          "name": "${DNP}",
-          "show": true
-        },
-        {
           "group_by": false,
           "label": "#",
           "name": "${ITEM_NUMBER}",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Category",
+          "name": "Category",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "DK_Datasheet_Link",
+          "name": "DK_Datasheet_Link",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "DK_Detail_Page",
+          "name": "DK_Detail_Page",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Description_1",
+          "name": "Description_1",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Digi-Key_PN",
+          "name": "Digi-Key_PN",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Family",
+          "name": "Family",
           "show": false
         },
         {
@@ -779,38 +815,8 @@
         },
         {
           "group_by": false,
-          "label": "Part Description",
-          "name": "Part Description",
-          "show": true
-        },
-        {
-          "group_by": false,
-          "label": "Description",
-          "name": "Description",
-          "show": false
-        },
-        {
-          "group_by": false,
-          "label": "DK_Datasheet_Link",
-          "name": "DK_Datasheet_Link",
-          "show": false
-        },
-        {
-          "group_by": false,
-          "label": "DK_Detail_Page",
-          "name": "DK_Detail_Page",
-          "show": false
-        },
-        {
-          "group_by": false,
-          "label": "Description_1",
-          "name": "Description_1",
-          "show": false
-        },
-        {
-          "group_by": false,
-          "label": "Digi-Key_PN",
-          "name": "Digi-Key_PN",
+          "label": "LCSC",
+          "name": "LCSC",
           "show": false
         },
         {
@@ -845,9 +851,9 @@
         },
         {
           "group_by": false,
-          "label": "Family",
-          "name": "Family",
-          "show": false
+          "label": "Part Description",
+          "name": "Part Description",
+          "show": true
         },
         {
           "group_by": false,
@@ -868,10 +874,10 @@
           "show": false
         },
         {
-          "group_by": false,
-          "label": "Category",
-          "name": "Category",
-          "show": false
+          "group_by": true,
+          "label": "DNP",
+          "name": "${DNP}",
+          "show": true
         }
       ],
       "filter_string": "",
@@ -918,7 +924,7 @@
       "meta": {
         "version": 0
       },
-      "model_mode": 0,
+      "model_mode": 4,
       "workbook_filename": ""
     },
     "page_layout_descr_file": "",

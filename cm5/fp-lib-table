@@ -2,4 +2,5 @@
   (version 7)
   (lib (name "Logo Footprints")(type "KiCad")(uri "/Users/jake/rust/alas/cm5/Logo Footprints")(options "")(descr ""))
   (lib (name "KiCad")(type "KiCad")(uri "/Users/jake/Downloads/LIB_48099-4000/48099-4000/KiCad")(options "")(descr ""))
+  (lib (name "Baumer")(type "KiCad")(uri "/Users/jake/Downloads/LIB_SRP5030CC-2R2M/SRP5030CC-2R2M/KiCad")(options "")(descr ""))
 )

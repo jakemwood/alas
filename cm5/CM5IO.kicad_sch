@@ -5,10 +5,10 @@
 	(uuid "e63e39d7-6ac0-4ffd-8aa3-1841a4541b55")
 	(paper "A4")
 	(title_block
-		(title "Compute Module 5 IO")
+		(title "Alas Compute Module 5 IO")
 		(rev "1")
-		(company "E-SMART SOLUTIONS")
-		(comment 1 "Mostafa Bkair")
+		(company "Ridgeline Radio")
+		(comment 1 "Jake Wood")
 	)
 	(lib_symbols
 		(symbol "Device:C"

@@ -20,7 +20,7 @@ C26,100n,C_0402_1005Metric,157.52,-134.2,0.0,top
 C27,10uF,CP_Elec_6.3x5.9,153.0,-146.0,-90.0,top
 C28,10uF,CP_Elec_6.3x5.9,165.275,-129.95,90.0,top
 C29,100n,C_0402_1005Metric,167.38,-134.1,0.0,top
-C3,100uF,CP_EIA-7343-31_Kemet-D,185.9,-141.5875,90.0,top
+C3,100uF,CP_EIA-7343-31_Kemet-D,185.9,-141.5875,270.0,top
 C30,10uF,CP_Elec_6.3x5.9,158.075,-128.625,90.0,top
 C31,100n,C_0402_1005Metric,159.675,-133.18,90.0,top
 C4,10u,C_0805_2012Metric,194.75,-155.1425,0.0,top
@@ -42,7 +42,7 @@ J4,0786463001,MOLEX_0786463001,233.7775,-145.8,0.0,top
 J5,USB3_A,C168717,171.43,-152.025,180.0,top
 J6,Conn_02x03_Counter_Clockwise,PinHeader_2x03_P2.54mm_Vertical,156.5,-154.97,90.0,top
 J7,Conn_01x04,JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical,240.2,-82.07,90.0,top
-L1,2.2uH,L_Bourns_SRP5030CC,195.65,-147.2425,0.0,top
+L1,2.2uH,L_Bourns_SRP5030CC,197.05,-145.95,0.0,top
 MC1,~,480994000,222.2,-81.721,0.0,top
 Module1,ComputeModule5-CM5,Raspberry-Pi-5-Compute-Module,162.0,-95.0,90,top
 Module1,ComputeModule5-CM5,Raspberry-Pi-5-Compute-Module,195.96,-95.0,90,top
