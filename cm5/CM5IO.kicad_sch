@@ -651,16 +651,6 @@
 	)
 	(wire
 		(pts
-			(xy 186.69 72.39) (xy 214.63 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "09f313d2-0794-4b6b-ab73-54bf9df37675")
-	)
-	(wire
-		(pts
 			(xy 180.34 96.52) (xy 180.34 111.76)
 		)
 		(stroke
@@ -691,16 +681,6 @@
 	)
 	(wire
 		(pts
-			(xy 146.05 172.72) (xy 146.05 157.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "22096028-cdae-4166-84eb-e50767b092c1")
-	)
-	(wire
-		(pts
 			(xy 134.62 96.52) (xy 134.62 111.76)
 		)
 		(stroke
@@ -708,26 +688,6 @@
 			(type solid)
 		)
 		(uuid "2bef89de-08c7-4a13-9d85-67948d429ca0")
-	)
-	(wire
-		(pts
-			(xy 208.28 83.82) (xy 208.28 172.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2e19e84e-83b0-4a37-860f-aa675cd13788")
-	)
-	(wire
-		(pts
-			(xy 208.28 172.72) (xy 146.05 172.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2f20f4d3-82bd-4e05-be59-4087415c12e1")
 	)
 	(wire
 		(pts
@@ -748,16 +708,6 @@
 			(type default)
 		)
 		(uuid "39d79b58-5a57-4b31-9f92-5bb5950bd5d6")
-	)
-	(wire
-		(pts
-			(xy 204.47 81.28) (xy 204.47 163.83)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3e814ee2-2d6c-4026-8cc5-3494d293feb3")
 	)
 	(wire
 		(pts
@@ -858,16 +808,6 @@
 			(type default)
 		)
 		(uuid "65efa620-1b50-433a-b7d9-12221de1b903")
-	)
-	(wire
-		(pts
-			(xy 214.63 81.28) (xy 204.47 81.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6be66802-f4b4-4030-81b8-0c1ec490914c")
 	)
 	(wire
 		(pts
@@ -991,16 +931,6 @@
 	)
 	(wire
 		(pts
-			(xy 214.63 83.82) (xy 208.28 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "aeaea97f-ba9b-4b5c-b8d8-1cafb67cc54a")
-	)
-	(wire
-		(pts
 			(xy 232.41 86.36) (xy 232.41 168.91)
 		)
 		(stroke
@@ -1031,16 +961,6 @@
 	)
 	(wire
 		(pts
-			(xy 168.91 163.83) (xy 204.47 163.83)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ba5510fd-9aca-48ce-ad20-a32cb91f18bd")
-	)
-	(wire
-		(pts
 			(xy 186.69 125.73) (xy 195.58 125.73)
 		)
 		(stroke
@@ -1048,16 +968,6 @@
 			(type default)
 		)
 		(uuid "bf0336c2-46fc-4f66-b979-ab598cfb2f81")
-	)
-	(wire
-		(pts
-			(xy 168.91 163.83) (xy 168.91 157.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cc2de9a1-0d99-45f4-b879-d96d13193ac4")
 	)
 	(wire
 		(pts
@@ -2853,16 +2763,6 @@
 				(justify left)
 			)
 		)
-		(pin "USER_LED" input
-			(at 168.91 157.48 270)
-			(uuid "c833c565-ef70-412c-a605-b1b939c7896e")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
 		(pin "UART_TX" input
 			(at 165.1 157.48 270)
 			(uuid "f6928bc8-e063-4134-b78a-ebe75de5cf3f")
@@ -3229,7 +3129,7 @@
 			)
 		)
 		(pin "PCIE_PWR_EN" input
-			(at 214.63 72.39 180)
+			(at 214.63 62.23 180)
 			(uuid "97775b76-6935-4c0f-9fc9-91db55c7f4d2")
 			(effects
 				(font
@@ -3299,7 +3199,7 @@
 			)
 		)
 		(pin "EECLK" input
-			(at 214.63 83.82 180)
+			(at 214.63 68.58 180)
 			(uuid "443925a3-8b0b-4325-8c8b-b7f82be1c698")
 			(effects
 				(font
@@ -3309,7 +3209,7 @@
 			)
 		)
 		(pin "USER_LED" input
-			(at 214.63 81.28 180)
+			(at 214.63 66.04 180)
 			(uuid "25a6a5ef-a54c-4763-8da2-6b31708ca1d5")
 			(effects
 				(font
