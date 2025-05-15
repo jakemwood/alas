@@ -5,10 +5,10 @@
 	(uuid "e63e39d7-6ac0-4ffd-8aa3-1841a4541b55")
 	(paper "A4")
 	(title_block
-		(title "Alas Compute Module 5 IO")
+		(title "Compute Module 5 IO")
 		(rev "1")
-		(company "Ridgeline Radio")
-		(comment 1 "Jake Wood")
+		(company "E-SMART SOLUTIONS")
+		(comment 1 "Mostafa Bkair")
 	)
 	(lib_symbols
 		(symbol "Device:C"
@@ -651,6 +651,16 @@
 	)
 	(wire
 		(pts
+			(xy 186.69 72.39) (xy 214.63 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "09f313d2-0794-4b6b-ab73-54bf9df37675")
+	)
+	(wire
+		(pts
 			(xy 180.34 96.52) (xy 180.34 111.76)
 		)
 		(stroke
@@ -681,13 +691,13 @@
 	)
 	(wire
 		(pts
-			(xy 186.69 72.39) (xy 200.66 72.39)
+			(xy 146.05 172.72) (xy 146.05 157.48)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "2298ec5a-acbe-47fd-a8c4-0086bafbee01")
+		(uuid "22096028-cdae-4166-84eb-e50767b092c1")
 	)
 	(wire
 		(pts
@@ -701,6 +711,26 @@
 	)
 	(wire
 		(pts
+			(xy 208.28 83.82) (xy 208.28 172.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2e19e84e-83b0-4a37-860f-aa675cd13788")
+	)
+	(wire
+		(pts
+			(xy 208.28 172.72) (xy 146.05 172.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2f20f4d3-82bd-4e05-be59-4087415c12e1")
+	)
+	(wire
+		(pts
 			(xy 204.47 48.26) (xy 214.63 48.26)
 		)
 		(stroke
@@ -711,16 +741,6 @@
 	)
 	(wire
 		(pts
-			(xy 200.66 62.23) (xy 214.63 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "38c22700-d45b-41e4-97df-d4a89cf75eaf")
-	)
-	(wire
-		(pts
 			(xy 92.71 101.6) (xy 104.14 101.6)
 		)
 		(stroke
@@ -728,6 +748,16 @@
 			(type default)
 		)
 		(uuid "39d79b58-5a57-4b31-9f92-5bb5950bd5d6")
+	)
+	(wire
+		(pts
+			(xy 204.47 81.28) (xy 204.47 163.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3e814ee2-2d6c-4026-8cc5-3494d293feb3")
 	)
 	(wire
 		(pts
@@ -831,6 +861,16 @@
 	)
 	(wire
 		(pts
+			(xy 214.63 81.28) (xy 204.47 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6be66802-f4b4-4030-81b8-0c1ec490914c")
+	)
+	(wire
+		(pts
 			(xy 162.56 96.52) (xy 162.56 111.76)
 		)
 		(stroke
@@ -861,16 +901,6 @@
 	)
 	(wire
 		(pts
-			(xy 200.66 72.39) (xy 200.66 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7dea0096-6fae-47aa-bb3d-be4fbe4c03fc")
-	)
-	(wire
-		(pts
 			(xy 129.54 50.8) (xy 120.65 50.8)
 		)
 		(stroke
@@ -888,6 +918,16 @@
 			(type default)
 		)
 		(uuid "8a953fbc-8812-47cd-a07e-673d270bd824")
+	)
+	(wire
+		(pts
+			(xy 161.29 157.48) (xy 161.29 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d185b93-81e9-4c16-aeb0-6a4f6c010ef3")
 	)
 	(wire
 		(pts
@@ -961,6 +1001,16 @@
 	)
 	(wire
 		(pts
+			(xy 214.63 83.82) (xy 208.28 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aeaea97f-ba9b-4b5c-b8d8-1cafb67cc54a")
+	)
+	(wire
+		(pts
 			(xy 232.41 86.36) (xy 232.41 168.91)
 		)
 		(stroke
@@ -991,6 +1041,16 @@
 	)
 	(wire
 		(pts
+			(xy 168.91 163.83) (xy 204.47 163.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba5510fd-9aca-48ce-ad20-a32cb91f18bd")
+	)
+	(wire
+		(pts
 			(xy 186.69 125.73) (xy 195.58 125.73)
 		)
 		(stroke
@@ -998,6 +1058,16 @@
 			(type default)
 		)
 		(uuid "bf0336c2-46fc-4f66-b979-ab598cfb2f81")
+	)
+	(wire
+		(pts
+			(xy 168.91 163.83) (xy 168.91 157.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cc2de9a1-0d99-45f4-b879-d96d13193ac4")
 	)
 	(wire
 		(pts
@@ -1081,6 +1151,16 @@
 	)
 	(wire
 		(pts
+			(xy 161.29 167.64) (xy 220.98 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "edf39de6-27d0-4e98-925f-4bfad1964b96")
+	)
+	(wire
+		(pts
 			(xy 123.19 22.86) (xy 204.47 22.86)
 		)
 		(stroke
@@ -1108,6 +1188,16 @@
 			(type default)
 		)
 		(uuid "f7524de2-d33a-413b-9fbd-a6ab5b0a8e91")
+	)
+	(wire
+		(pts
+			(xy 220.98 167.64) (xy 220.98 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fe683f58-ee71-42d5-9a59-40dcb01cac22")
 	)
 	(wire
 		(pts
@@ -2181,15 +2271,6 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C327024"
-			(at 104.14 97.79 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
 		(pin "1"
 			(uuid "291ccd32-a37d-4fac-b11d-c12157e045a7")
 		)
@@ -2467,15 +2548,6 @@
 			)
 		)
 		(property "Part Description" "	0.1uF 10% 16V Ceramic Capacitor X7R 0402 (1005 Metric)"
-			(at 92.71 97.79 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "LCSC" "C327024"
 			(at 92.71 97.79 0)
 			(effects
 				(font
@@ -2793,9 +2865,29 @@
 				(justify left)
 			)
 		)
+		(pin "USER_LED" input
+			(at 168.91 157.48 270)
+			(uuid "c833c565-ef70-412c-a605-b1b939c7896e")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
 		(pin "UART_TX" input
 			(at 165.1 157.48 270)
 			(uuid "f6928bc8-e063-4134-b78a-ebe75de5cf3f")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "USER_BUTTON" input
+			(at 161.29 157.48 270)
+			(uuid "d7f3a652-e585-4cb4-a422-5b5c12e96789")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3159,7 +3251,7 @@
 			)
 		)
 		(pin "PCIE_PWR_EN" input
-			(at 214.63 62.23 180)
+			(at 214.63 72.39 180)
 			(uuid "97775b76-6935-4c0f-9fc9-91db55c7f4d2")
 			(effects
 				(font
@@ -3171,6 +3263,16 @@
 		(pin "UART_TX" output
 			(at 217.17 86.36 270)
 			(uuid "4f8cb24a-ae41-4689-a8dd-8c0e0ed1847e")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "USER_BUTTON" output
+			(at 220.98 86.36 270)
+			(uuid "5a222de9-f213-4b0c-97e7-0b0f6fd6dd3a")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3229,7 +3331,7 @@
 			)
 		)
 		(pin "EECLK" input
-			(at 214.63 68.58 180)
+			(at 214.63 83.82 180)
 			(uuid "443925a3-8b0b-4325-8c8b-b7f82be1c698")
 			(effects
 				(font
@@ -3239,7 +3341,7 @@
 			)
 		)
 		(pin "USER_LED" input
-			(at 214.63 66.04 180)
+			(at 214.63 81.28 180)
 			(uuid "25a6a5ef-a54c-4763-8da2-6b31708ca1d5")
 			(effects
 				(font
