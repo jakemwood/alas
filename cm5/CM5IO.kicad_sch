@@ -11,6 +11,206 @@
 		(comment 1 "Jake Wood")
 	)
 	(lib_symbols
+		(symbol "Connector_Generic:Conn_01x04"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "J"
+				(at 0 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x04"
+				(at 0 -7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "Conn_01x04_1_1"
+				(rectangle
+					(start -1.27 3.81)
+					(end 1.27 -6.35)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(rectangle
+					(start -1.27 2.667)
+					(end 0 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 0.127)
+					(end 0 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -2.413)
+					(end 0 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -4.953)
+					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 2.54 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:C"
 			(pin_numbers
 				(hide yes)
@@ -233,231 +433,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "dk_Rectangular-Connectors-Headers-Male-Pins:B2B-XH-A_LF__SN_"
-			(pin_names
-				(offset 1.016)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "J"
-				(at -2.54 -1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify right)
-				)
-			)
-			(property "Value" "B2B-XH-A_LF__SN_"
-				(at 1.27 -3.81 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "digikey-footprints:PinHeader_1x2_P2.5mm_Drill1.1mm"
-				(at 5.08 5.08 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "http://www.jst-mfg.com/product/pdf/eng/eXH.pdf"
-				(at 5.08 7.62 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Description" "CONN HEADER VERT 2POS 2.5MM"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Digi-Key_PN" "455-2247-ND"
-				(at 5.08 10.16 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "MPN" "B2B-XH-A(LF)(SN)"
-				(at 5.08 12.7 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Category" "Connectors, Interconnects"
-				(at 5.08 15.24 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Family" "Rectangular Connectors - Headers, Male Pins"
-				(at 5.08 17.78 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "DK_Datasheet_Link" "http://www.jst-mfg.com/product/pdf/eng/eXH.pdf"
-				(at 5.08 20.32 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "DK_Detail_Page" "/product-detail/en/jst-sales-america-inc/B2B-XH-A(LF)(SN)/455-2247-ND/1651045"
-				(at 5.08 22.86 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Description_1" "CONN HEADER VERT 2POS 2.5MM"
-				(at 5.08 25.4 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Manufacturer" "JST Sales America Inc."
-				(at 5.08 27.94 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Status" "Active"
-				(at 5.08 30.48 0)
-				(effects
-					(font
-						(size 1.524 1.524)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "455-2247-ND XH"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "B2B-XH-A_LF__SN__1_1"
-				(rectangle
-					(start -1.27 0)
-					(end 3.81 -2.54)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(rectangle
-					(start -0.254 -1.143)
-					(end 0.254 -1.651)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(rectangle
-					(start 2.286 -1.143)
-					(end 2.794 -1.651)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(pin passive line
-					(at 0 2.54 270)
-					(length 2.54)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 2.54 270)
-					(length 2.54)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "power:GND"
 			(power)
 			(pin_numbers
@@ -594,10 +569,22 @@
 		(uuid "a501555e-bbc7-4b58-ad89-28a0cd3dd6d0")
 	)
 	(junction
+		(at 44.45 82.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "69ee5cf5-df91-41ce-8e34-69d699d1efba")
+	)
+	(junction
 		(at 92.71 101.6)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bf5901c0-daf4-45af-a380-5243d8455cd9")
+	)
+	(junction
+		(at 40.64 85.09)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e0f81dbd-a851-474d-88b4-2e7ff7b6e55a")
 	)
 	(wire
 		(pts
@@ -608,26 +595,6 @@
 			(type default)
 		)
 		(uuid "021f7565-ee6f-4819-bf2e-dd66e92b19bd")
-	)
-	(wire
-		(pts
-			(xy 238.76 86.36) (xy 238.76 161.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "040b57bc-cfc1-496d-a005-2e47d93c43ec")
-	)
-	(wire
-		(pts
-			(xy 153.67 168.91) (xy 232.41 168.91)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "06266043-0676-40f3-acab-c29b9ed1bcc4")
 	)
 	(wire
 		(pts
@@ -661,26 +628,6 @@
 	)
 	(wire
 		(pts
-			(xy 153.67 168.91) (xy 153.67 157.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "11e9130e-e4cd-4b26-abff-727a68714dc7")
-	)
-	(wire
-		(pts
-			(xy 50.8 78.74) (xy 50.8 82.55)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1c22932e-2785-4419-b465-41fcf37e42aa")
-	)
-	(wire
-		(pts
 			(xy 186.69 72.39) (xy 200.66 72.39)
 		)
 		(stroke
@@ -698,6 +645,16 @@
 			(type solid)
 		)
 		(uuid "2bef89de-08c7-4a13-9d85-67948d429ca0")
+	)
+	(wire
+		(pts
+			(xy 45.72 85.09) (xy 40.64 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2c7a8f69-d57c-4a70-9e15-cfc412ba86f8")
 	)
 	(wire
 		(pts
@@ -731,16 +688,6 @@
 	)
 	(wire
 		(pts
-			(xy 149.86 170.18) (xy 241.3 170.18)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3ff4f1bc-61d9-4ff7-8dc9-82c51c36cdbe")
-	)
-	(wire
-		(pts
 			(xy 228.6 166.37) (xy 157.48 166.37)
 		)
 		(stroke
@@ -751,13 +698,13 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 82.55) (xy 53.34 78.74)
+			(xy 44.45 90.17) (xy 45.72 90.17)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "473b09fb-68d1-4d76-8a23-4a05cc2e73ac")
+		(uuid "44fb6e30-980d-4c57-8ae1-83e0eada668d")
 	)
 	(wire
 		(pts
@@ -821,16 +768,6 @@
 	)
 	(wire
 		(pts
-			(xy 149.86 157.48) (xy 149.86 170.18)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "65efa620-1b50-433a-b7d9-12221de1b903")
-	)
-	(wire
-		(pts
 			(xy 162.56 96.52) (xy 162.56 111.76)
 		)
 		(stroke
@@ -838,6 +775,16 @@
 			(type default)
 		)
 		(uuid "6d54cba4-381a-41ab-9093-f35a8f554302")
+	)
+	(wire
+		(pts
+			(xy 40.64 85.09) (xy 33.02 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "737760eb-f6b1-4caa-a631-ed1eaa1e2d22")
 	)
 	(wire
 		(pts
@@ -861,6 +808,16 @@
 	)
 	(wire
 		(pts
+			(xy 44.45 80.01) (xy 44.45 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7b8d86e5-99b9-43a7-950d-95cc1929cd48")
+	)
+	(wire
+		(pts
 			(xy 200.66 72.39) (xy 200.66 62.23)
 		)
 		(stroke
@@ -868,6 +825,16 @@
 			(type default)
 		)
 		(uuid "7dea0096-6fae-47aa-bb3d-be4fbe4c03fc")
+	)
+	(wire
+		(pts
+			(xy 40.64 87.63) (xy 40.64 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "866189a3-1988-4a70-84cc-1b7d738aba62")
 	)
 	(wire
 		(pts
@@ -911,23 +878,23 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 161.29) (xy 175.26 157.48)
+			(xy 44.45 82.55) (xy 44.45 90.17)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "94ebe6ff-fbba-4d98-9e03-e8a4cf99070d")
+		(uuid "9937eafe-86e3-4e07-8e97-4463164b5bdd")
 	)
 	(wire
 		(pts
-			(xy 236.22 160.02) (xy 236.22 86.36)
+			(xy 45.72 87.63) (xy 40.64 87.63)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "9ea4a12b-59ad-45df-8a0f-9333b2c45462")
+		(uuid "9965e2c5-c277-4fe4-8e62-fda8713a0cc7")
 	)
 	(wire
 		(pts
@@ -941,13 +908,13 @@
 	)
 	(wire
 		(pts
-			(xy 179.07 157.48) (xy 179.07 160.02)
+			(xy 45.72 82.55) (xy 44.45 82.55)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "a6998ea9-831c-45f3-bfbf-b9d50f79b55b")
+		(uuid "a88854fd-d4a0-4311-9014-100c86b23c83")
 	)
 	(wire
 		(pts
@@ -958,16 +925,6 @@
 			(type default)
 		)
 		(uuid "ab07869a-4c7b-4184-8ba7-71ce7a570139")
-	)
-	(wire
-		(pts
-			(xy 232.41 86.36) (xy 232.41 168.91)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b04ec0e2-9728-4a2b-9426-828b15735514")
 	)
 	(wire
 		(pts
@@ -1031,16 +988,6 @@
 	)
 	(wire
 		(pts
-			(xy 179.07 160.02) (xy 236.22 160.02)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dc1816db-567b-4a17-b84c-94c8cf44f37b")
-	)
-	(wire
-		(pts
 			(xy 115.57 72.39) (xy 129.54 72.39)
 		)
 		(stroke
@@ -1088,26 +1035,6 @@
 			(type default)
 		)
 		(uuid "ee731282-e646-492c-95c7-378517d677ba")
-	)
-	(wire
-		(pts
-			(xy 241.3 170.18) (xy 241.3 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "efb45c18-4d7d-456f-a5d2-c46491b03184")
-	)
-	(wire
-		(pts
-			(xy 238.76 161.29) (xy 175.26 161.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f7524de2-d33a-413b-9fbd-a6ab5b0a8e91")
 	)
 	(wire
 		(pts
@@ -1190,7 +1117,7 @@
 		(uuid "a06e8e78-f567-42e6-b645-013b1073ca31")
 	)
 	(label "+5v"
-		(at 53.34 78.74 0)
+		(at 44.45 80.01 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2206,7 +2133,7 @@
 		)
 	)
 	(symbol
-		(lib_id "dk_Rectangular-Connectors-Headers-Male-Pins:B2B-XH-A_LF__SN_")
+		(lib_id "Connector_Generic:Conn_01x04")
 		(at 50.8 85.09 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -2216,7 +2143,7 @@
 		(fields_autoplaced yes)
 		(uuid "7ce96aa2-b5de-4278-b901-ac2edab30c28")
 		(property "Reference" "J2"
-			(at 55.88 85.0899 0)
+			(at 53.34 85.0899 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2224,8 +2151,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "B2B-XH-A_LF__SN_"
-			(at 55.88 87.6299 0)
+		(property "Value" "1x4"
+			(at 53.34 87.6299 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2234,26 +2161,24 @@
 			)
 		)
 		(property "Footprint" "digikey-footprints:PinHeader_1x2_P2.5mm_Drill1.1mm"
-			(at 55.88 80.01 0)
+			(at 50.8 85.09 0)
 			(effects
 				(font
-					(size 1.524 1.524)
+					(size 1.27 1.27)
 				)
-				(justify left)
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://www.jst-mfg.com/product/pdf/eng/eXH.pdf"
-			(at 55.88 77.47 0)
+		(property "Datasheet" "~"
+			(at 50.8 85.09 0)
 			(effects
 				(font
-					(size 1.524 1.524)
+					(size 1.27 1.27)
 				)
-				(justify left)
 				(hide yes)
 			)
 		)
-		(property "Description" "CONN HEADER VERT 2POS 2.5MM"
+		(property "Description" "Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 50.8 85.09 0)
 			(effects
 				(font
@@ -2357,6 +2282,12 @@
 		)
 		(pin "1"
 			(uuid "691cb971-2a40-4a50-b79a-024c892ec723")
+		)
+		(pin "3"
+			(uuid "f8ed968c-79c1-42a5-ba99-d6f98e277382")
+		)
+		(pin "4"
+			(uuid "1e41ba75-611d-4397-9806-dfa6e36ecb5b")
 		)
 		(instances
 			(project ""
@@ -2501,7 +2432,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 50.8 78.74 180)
+		(at 33.02 85.09 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2509,7 +2440,7 @@
 		(dnp no)
 		(uuid "f3e6b375-fede-435a-affe-0a2e93f39661")
 		(property "Reference" "#PWR063"
-			(at 50.8 72.39 0)
+			(at 33.02 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2518,7 +2449,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 50.673 74.3458 0)
+			(at 32.893 80.6958 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2526,7 +2457,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 50.8 78.74 0)
+			(at 33.02 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2535,7 +2466,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 50.8 78.74 0)
+			(at 33.02 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2544,7 +2475,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 50.8 78.74 0)
+			(at 33.02 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)

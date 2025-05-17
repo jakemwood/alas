@@ -1,4 +1,4 @@
-25439974582816885
+25445216684449223
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -19284,6 +19284,20 @@ connector JST ZH horizontal
 0
 15
 14
+Connector_Molex
+CONN_SD-43045-005_06_MOL 2x3
+
+430450612 
+0
+6
+6
+Connector_Molex
+CONN_SD-43650-006_04_MOL 1x4
+
+436500415 
+0
+4
+4
 Connector_Molex
 Molex_CLIK-Mate_502382-0270_1x02-1MP_P1.25mm_Vertical
 Molex CLIK-Mate series connector, 502382-0270 (http://www.molex.com/pdm_docs/sd/5023820270_sd.pdf), generated with kicad-footprint-generator
@@ -65526,6 +65540,13 @@ Connector
 0
 4
 4
+KiCad
+Raspberry-Pi-5-Compute-Module Upside Down
+Raspberry Pi 5 Compute Module
+Raspberry Pi 5 Compute Module
+0
+200
+200
 LED_SMD
 LED-APA102-2020
 http://www.led-color.com/upload/201604/APA102-2020%20SMD%20LED.pdf
