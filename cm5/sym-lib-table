@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Digikey")(type "KiCad")(uri "/Users/jake/Downloads/KiCADv6/2025-04-26_21-53-35.kicad_sym")(options "")(descr ""))
+  (lib (name "48099-4000")(type "KiCad")(uri "/Users/jake/Downloads/LIB_48099-4000/48099-4000/KiCad/48099-4000.kicad_sym")(options "")(descr ""))
+)
