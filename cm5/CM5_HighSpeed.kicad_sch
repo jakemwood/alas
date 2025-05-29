@@ -7,8 +7,8 @@
 	(title_block
 		(title "Compute Module 5 IO ")
 		(rev "1")
-		(company "E-SMART SOLUTIONS")
-		(comment 1 "Mostafa Bakir")
+		(company "Ridgeline Radio")
+		(comment 1 "Jake Wood")
 	)
 	(lib_symbols
 		(symbol "CM5IO:AP2553W6"
@@ -5417,7 +5417,7 @@
 	)
 	(wire
 		(pts
-			(xy 24.13 175.26) (xy 29.21 175.26)
+			(xy 29.21 168.91) (xy 29.21 175.26)
 		)
 		(stroke
 			(width 0)
@@ -6565,16 +6565,6 @@
 		)
 		(uuid "3e147ce1-21a6-4e77-a3db-fd00d575cd22")
 	)
-	(label "+5v"
-		(at 24.13 175.26 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "438bfc29-c054-4e2a-8dd2-0fd0b034d37b")
-	)
 	(label "USB3-1-RX_P"
 		(at 102.87 99.06 0)
 		(effects
@@ -6795,6 +6785,17 @@
 			(justify left)
 		)
 		(uuid "02b1295e-cf95-47ff-9c57-f8ada28f2e94")
+	)
+	(hierarchical_label "+5v"
+		(shape input)
+		(at 29.21 168.91 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "16889ed5-1646-4205-8c83-23ae28cee78c")
 	)
 	(hierarchical_label "PCIE_PWR_EN"
 		(shape output)

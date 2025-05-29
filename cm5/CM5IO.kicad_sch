@@ -557,6 +557,16 @@
 		)
 		(uuid "4d609e7c-74c9-4ae9-a26d-946ff00c167d")
 	)
+	(text "TODO: source/reason for these capacitors"
+		(exclude_from_sim no)
+		(at 54.61 120.904 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "6e546eed-8ff5-42c9-9c55-9eb478eea953")
+	)
 	(text "Connectors\n-------\nHDMI 0\nHDMI 1\nCSI/DSI 0\nCSI/DSI 1"
 		(exclude_from_sim no)
 		(at 148.59 58.42 0)
@@ -575,7 +585,7 @@
 		(uuid "69ee5cf5-df91-41ce-8e34-69d699d1efba")
 	)
 	(junction
-		(at 92.71 101.6)
+		(at 39.37 110.49)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bf5901c0-daf4-45af-a380-5243d8455cd9")
@@ -678,7 +688,7 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 101.6) (xy 104.14 101.6)
+			(xy 39.37 110.49) (xy 50.8 110.49)
 		)
 		(stroke
 			(width 0)
@@ -788,7 +798,7 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 101.6) (xy 92.71 104.14)
+			(xy 39.37 110.49) (xy 39.37 113.03)
 		)
 		(stroke
 			(width 0)
@@ -848,7 +858,7 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 93.98) (xy 104.14 93.98)
+			(xy 39.37 102.87) (xy 50.8 102.87)
 		)
 		(stroke
 			(width 0)
@@ -1047,7 +1057,7 @@
 		(uuid "ffaeb2b4-f7d8-4e06-9348-f6e5f4ac35f8")
 	)
 	(label "+5v"
-		(at 92.71 93.98 0)
+		(at 39.37 102.87 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2002,7 +2012,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 104.14 97.79 0)
+		(at 50.8 106.68 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2010,7 +2020,7 @@
 		(dnp no)
 		(uuid "3c5f4bb0-04d2-46c1-9c7f-c06460df6a62")
 		(property "Reference" "C18"
-			(at 107.061 96.6216 0)
+			(at 53.721 105.5116 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2019,7 +2029,7 @@
 			)
 		)
 		(property "Value" "100n"
-			(at 107.061 98.933 0)
+			(at 53.721 107.823 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2028,7 +2038,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 105.1052 101.6 0)
+			(at 51.7652 110.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2037,7 +2047,7 @@
 			)
 		)
 		(property "Datasheet" "https://search.murata.co.jp/Ceramy/image/img/A01X/G101/ENG/GRM155R71C104KA88-01.pdf"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2046,7 +2056,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2055,7 +2065,7 @@
 			)
 		)
 		(property "Field4" "Farnell"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2064,7 +2074,7 @@
 			)
 		)
 		(property "Field5" "2611911"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2073,7 +2083,7 @@
 			)
 		)
 		(property "Field6" "RM EMK105 B7104KV-F"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2082,7 +2092,7 @@
 			)
 		)
 		(property "Field7" "TAIYO YUDEN EUROPE GMBH"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2091,7 +2101,7 @@
 			)
 		)
 		(property "Field8" "110091611"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2100,7 +2110,7 @@
 			)
 		)
 		(property "Part Description" "	0.1uF 10% 16V Ceramic Capacitor X7R 0402 (1005 Metric)"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2109,7 +2119,7 @@
 			)
 		)
 		(property "LCSC" "C327024"
-			(at 104.14 97.79 0)
+			(at 50.8 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2300,7 +2310,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 92.71 97.79 0)
+		(at 39.37 106.68 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2308,7 +2318,7 @@
 		(dnp no)
 		(uuid "cf24492d-8526-4d53-a0eb-2486aa3ca298")
 		(property "Reference" "C9"
-			(at 95.631 96.6216 0)
+			(at 42.291 105.5116 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2317,7 +2327,7 @@
 			)
 		)
 		(property "Value" "100n"
-			(at 95.631 98.933 0)
+			(at 42.291 107.823 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2326,7 +2336,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 93.6752 101.6 0)
+			(at 40.3352 110.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2335,7 +2345,7 @@
 			)
 		)
 		(property "Datasheet" "https://search.murata.co.jp/Ceramy/image/img/A01X/G101/ENG/GRM155R71C104KA88-01.pdf"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2344,7 +2354,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2353,7 +2363,7 @@
 			)
 		)
 		(property "Field4" "Farnell"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2362,7 +2372,7 @@
 			)
 		)
 		(property "Field5" "2611911"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2371,7 +2381,7 @@
 			)
 		)
 		(property "Field6" "RM EMK105 B7104KV-F"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2380,7 +2390,7 @@
 			)
 		)
 		(property "Field7" "TAIYO YUDEN EUROPE GMBH"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2389,7 +2399,7 @@
 			)
 		)
 		(property "Field8" "110091611"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2398,7 +2408,7 @@
 			)
 		)
 		(property "Part Description" "	0.1uF 10% 16V Ceramic Capacitor X7R 0402 (1005 Metric)"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2407,7 +2417,7 @@
 			)
 		)
 		(property "LCSC" "C327024"
-			(at 92.71 97.79 0)
+			(at 39.37 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2497,7 +2507,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 92.71 104.14 0)
+		(at 39.37 113.03 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2505,7 +2515,7 @@
 		(dnp no)
 		(uuid "fc0d6f0d-075c-4218-becf-ed01d64d2241")
 		(property "Reference" "#PWR013"
-			(at 92.71 110.49 0)
+			(at 39.37 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2514,7 +2524,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 92.837 108.5342 0)
+			(at 39.497 117.4242 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2522,7 +2532,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 92.71 104.14 0)
+			(at 39.37 113.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2531,7 +2541,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 92.71 104.14 0)
+			(at 39.37 113.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2540,7 +2550,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 92.71 104.14 0)
+			(at 39.37 113.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2577,7 +2587,7 @@
 		)
 		(uuid "00000000-0000-0000-0000-00005cff706a")
 		(property "Sheetname" "CM5_GPIO ( Ethernet, GPIO, SDCARD)"
-			(at 129.54 152.4 0)
+			(at 129.286 159.766 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2586,7 +2596,7 @@
 			)
 		)
 		(property "Sheetfile" "CM5_GPIO.kicad_sch"
-			(at 129.54 153.67 0)
+			(at 129.54 161.544 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2644,16 +2654,6 @@
 				(justify right)
 			)
 		)
-		(pin "CAM_GPIO0" output
-			(at 157.48 111.76 90)
-			(uuid "faede168-45f9-477a-bb52-53f41b551de8")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
 		(pin "CAM_GPIO1" output
 			(at 162.56 111.76 90)
 			(uuid "cddfa975-6d49-4b75-a22c-585a33d831c6")
@@ -2672,16 +2672,6 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
-			)
-		)
-		(pin "USBOTG" output
-			(at 170.18 111.76 90)
-			(uuid "d6d4dc9c-0e44-420e-8240-37c70ea3c763")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 			)
 		)
 		(pin "CC2" output
@@ -3061,7 +3051,7 @@
 			(color 255 255 255 0.0000)
 		)
 		(uuid "00000000-0000-0000-0000-00005ed4bb5b")
-		(property "Sheetname" "PCIe-M2"
+		(property "Sheetname" "Cellular"
 			(at 214.63 33.5786 0)
 			(effects
 				(font

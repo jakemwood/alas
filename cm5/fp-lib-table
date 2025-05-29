@@ -4,4 +4,6 @@
   (lib (name "KiCad")(type "KiCad")(uri "/Users/jake/Downloads/LIB_48099-4000/48099-4000/KiCad")(options "")(descr ""))
   (lib (name "Baumer")(type "KiCad")(uri "/Users/jake/Downloads/LIB_SRP5030CC-2R2M/SRP5030CC-2R2M/KiCad")(options "")(descr ""))
   (lib (name "TLV320ADC6120IRTER")(type "KiCad")(uri "/Users/jake/Downloads/TLV320ADC6120IRTER")(options "")(descr ""))
+  (lib (name "PCM")(type "KiCad")(uri "/Users/jake/Downloads/ul_PCM1863DBT/KiCADv6/footprints.pretty")(options "")(descr ""))
+  (lib (name "footprints")(type "KiCad")(uri "/Users/jake/Downloads/KiCADv6/footprints.pretty")(options "")(descr ""))
 )

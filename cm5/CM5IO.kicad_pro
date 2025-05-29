@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.2,
-          "height": 0.45,
-          "width": 0.45
+          "drill": 0.0,
+          "height": 1.45,
+          "width": 1.0
         },
         "silk_line_width": 0.12,
         "silk_text_italic": false,
@@ -942,7 +942,11 @@
     ],
     [
       "00000000-0000-0000-0000-00005ed4bb5b",
-      "PCIe-M2"
+      "Cellular"
+    ],
+    [
+      "f818e98f-e416-4f1f-aa80-a628f2472c25",
+      "Audio"
     ]
   ],
   "text_variables": {}
