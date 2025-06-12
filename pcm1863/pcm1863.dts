@@ -1,0 +1,86 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+        compatible = "brcm,bcm2835";
+
+        /* ---------- 1. The codec on I²C-1, address 0x4a ---------- */
+        fragment@0 {
+                target = <&i2c1>;
+                __overlay__ {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+
+                        pcm1863: codec@4a {
+                                #sound-dai-cells = <0>;
+                                compatible = "ti,pcm1863";
+                                reg = <0x4a>;
+
+                                /* --- force differential inputs at probe --- *
+                                 * 0x06 = ADC1 Left input-mux
+                                 * 0x07 = ADC1 Right input-mux
+                                 * 0x10 selects {VINxP,VINxM}[DIFF]          */
+                                ti,reg-sequence = /bits/ 8 <
+                                        0x06 0x10   /* CH1 Left → VIN1 diff */
+                                        0x07 0x10   /* CH1 Right→ VIN2 diff */
+                                >;
+
+                                /* Pull 3 V3 into the driver so the dummy warning goes away */
+                                avdd-supply = <&vdd_3v3_reg>;
+                                dvdd-supply = <&vdd_3v3_reg>;
+                                iovdd-supply = <&vdd_3v3_reg>;
+
+                                /* Optional: expose the 24.576 MHz crystal to linux-clk */
+                                clocks = <&clk24m576>;   /* see fragment@3 below */
+                                clock-names = "mclk";
+                        };
+                };
+        };
+
+        /* ---------- 2. Turn the Pi’s I²S peripheral on ---------- */
+        fragment@1 {
+                target = <&i2s>;
+                __overlay__ {
+                        status = "okay";
+                };
+        };
+
+        /* ---------- 3. Fixed 24.576 MHz clock provider (so ALSA knows) ---------- */
+        fragment@3 {
+                target-path = "/";
+                __overlay__ {
+                        clk24m576: clk24m576 {
+                                compatible = "fixed-clock";
+                                #clock-cells = <0>;
+                                clock-frequency = <24576000>;
+                        };
+                };
+        };
+
+        /* ---------- 4. The sound card wiring ---------- */
+        fragment@2 {
+                target-path = "/";
+                __overlay__ {
+                        pcm1863_card: pcm1863_card {
+                                compatible = "simple-audio-card";
+                                simple-audio-card,name = "PCM1863-Capture";
+                                simple-audio-card,format = "i2s";
+
+                                /* Codec delivers both clocks -> Pi is slave */
+                                simple-audio-card,bitclock-master = <&pcm1863>;
+                                simple-audio-card,frame-master    = <&pcm1863>;
+
+                                /* Pi side ------------------------------------------------ */
+                                simple-audio-card,cpu {
+                                        sound-dai = <&i2s>;
+                                        system-clock-frequency = <24576000>;
+                                };
+
+                                /* Codec side --------------------------------------------- */
+                                simple-audio-card,codec {
+                                        sound-dai = <&pcm1863>;
+                                };
+                        };
+                };
+        };
+};
