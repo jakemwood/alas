@@ -6735,7 +6735,7 @@
 		)
 		(uuid "d83fc474-9386-435b-8fb4-cca76fc2bf2f")
 	)
-	(label "USB3-1-D_P"
+	(label "USB3-1-D_N"
 		(at 163.83 83.82 0)
 		(effects
 			(font
@@ -6745,7 +6745,7 @@
 		)
 		(uuid "f1ea7146-3be7-43ad-a34f-7dc5b8a13fd9")
 	)
-	(label "USB3-1-D_N"
+	(label "USB3-1-D_P"
 		(at 163.83 86.36 0)
 		(effects
 			(font
