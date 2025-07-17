@@ -268,7 +268,7 @@ async fn get_dropbox_link(state: &State<SafeState>) -> Json<DropboxUrl> {
 }
 
 #[post("/dropbox-link", format = "json", data = "<request>")]
-async fn dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState>) -> Status {
+async fn post_dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState>) -> Status {
     let code = request.code.clone();
     let mut state = state.write().await;
     let mut new_config = (*state).config.clone();
@@ -281,19 +281,27 @@ async fn dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState>) ->
         Some("http://localhost:5173/dropbox-link".to_string())
     );
 
-    let token = auth.obtain_access_token_async(NoauthDefaultClient::default()).await.unwrap();
-    println!("📦 Got a token? {:?}", token);
-    let auth_saved = auth.save();
-    println!("📦 Attempting to save Dropbox token : {:?}", auth_saved);
+    let token = auth.obtain_access_token_async(NoauthDefaultClient::default()).await;
+    match token {
+        Ok(token) => {
+            println!("📦 Got a token? {:?}", token);
+            let auth_saved = auth.save();
+            println!("📦 Attempting to save Dropbox token : {:?}", auth_saved);
 
-    new_config.dropbox = Some(AlasDropboxConfig {
-        pkce_verifier: new_config.dropbox.clone().unwrap().pkce_verifier,
-        access_token: auth_saved,
+            new_config.dropbox = Some(AlasDropboxConfig {
+                pkce_verifier: new_config.dropbox.clone().unwrap().pkce_verifier,
+                access_token: auth_saved,
 
-    });
-    state.update_config(new_config);
+            });
+            state.update_config(new_config);
 
-    Status::Ok
+            Status::Ok
+        },
+        Err(e) => {
+            println!("📦 Error: {}", e);
+            Status::UnprocessableEntity
+        },
+    }
 }
 
 pub fn routes() -> Vec<Route> {
@@ -306,7 +314,7 @@ pub fn routes() -> Vec<Route> {
         set_audio_config,
         get_redundancy_config,
         set_redundancy_config,
-        dropbox_link,
+        post_dropbox_link,
         get_dropbox_link,
     ]
 }

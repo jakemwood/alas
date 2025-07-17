@@ -1,5 +1,6 @@
-use cpal::traits::{ DeviceTrait, HostTrait, StreamTrait };
-use cpal::Sample;
+use std::fmt::format;
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait };
+use cpal::{BufferSize, Sample, StreamConfig, SupportedStreamConfig};
 use mp3lame_encoder::{ DualPcm, Encoder, FlushNoGap };
 use shout::{ ShoutConn };
 use std::fs::File;
@@ -12,10 +13,11 @@ use tokio::sync::broadcast::Sender;
 
 use crate::state::AlasMessage::VolumeChange;
 use crate::state::{ AlasMessage, AlasState, SafeState };
-use bus::Bus;
+use bus::{Bus, BusReader};
 use tokio::task::JoinHandle;
 use tokio::{ select, task };
 use tokio::sync::RwLock;
+use crate::dropbox::upload_file_to_dropbox;
 
 /// Starts the thread for handling audio.
 ///
@@ -65,8 +67,9 @@ pub async fn start(
         });
 
         // Icecast streaming thread
+        let icecast_rx = audio_bus.add_rx();
         let icecast = start_icecast_thread(
-            &mut audio_bus,
+            icecast_rx,
             desire_to_broadcast.clone(),
             alas_state.clone(),
             bus.clone(),
@@ -74,50 +77,44 @@ pub async fn start(
         );
         //
         // // File saving thread
+        let file_rx = audio_bus.add_rx();
         let record = start_file_save_thread(
-            &mut audio_bus,
+            file_rx,
             desire_to_broadcast.clone(),
             bus.clone()
         );
 
         let host = cpal::default_host();
         let device = host.default_input_device().expect("No default sound card");
-        let audio_device_config = device.default_input_config().unwrap();
 
         let err_fn = move |err| {
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        println!("🔊 Default sample rate: {:?} format: {:?} sample size: {:?}",
-                 audio_device_config.sample_rate(),
-                 audio_device_config.sample_format(),
-                 audio_device_config.sample_format().sample_size()
-        );
         let mut exit_bus = bus.subscribe();
 
-        let stream = match audio_device_config.sample_format() {
-            // TODO: HiFiBerry supports F32 by default, so that's what
-            // we have implemented. Others could be implemented later.
-            cpal::SampleFormat::F32 =>
-                device
-                    .build_input_stream(
-                        &audio_device_config.into(),
-                        move |data, _: &_| {
-                            handle_samples::<f32>(
-                                data,
-                                &bus,
-                                &alas_state,
-                                &mut desire_to_broadcast,
-                                &mut audio_last_seen,
-                                &mut audio_bus
-                            )
-                        },
-                        err_fn,
-                        None
-                    )
-                    .unwrap(),
-            sample_format => panic!("Unsupported sample format: {:?}", sample_format),
+        let stream_config = StreamConfig {
+            channels: 2,
+            sample_rate: cpal::SampleRate(48_000),
+            buffer_size: BufferSize::Default,
         };
+        let stream = device
+            .build_input_stream(
+                &stream_config,
+                move |data, _: &_| {
+                    handle_samples::<f32>(
+                        data,
+                        &bus,
+                        &alas_state,
+                        &mut desire_to_broadcast,
+                        &mut audio_last_seen,
+                        &mut audio_bus
+                    )
+                },
+                err_fn,
+                None
+            )
+            .unwrap();
 
         stream.play().expect("Could not play");
         println!("After play!");
@@ -147,22 +144,22 @@ pub async fn start(
 }
 
 fn start_file_save_thread(
-    audio_bus: &mut Bus<Vec<f32>>,
+    mut file_rx: BusReader<Vec<f32>>,
     desire_to_broadcast: Arc<AtomicBool>,
     file_bus: Sender<AlasMessage>
 ) -> JoinHandle<&'static str> {
-    let mut file_rx = audio_bus.add_rx();
     let mut is_recording = false;
 
     task::spawn_blocking(move || {
+        // return "Abandoned early!!";
         // TODO(config)
         let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
         mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
         mp3_encoder
-            .set_sample_rate(44_100) // TODO(config)
+            .set_sample_rate(48_000) // TODO(config)
             .expect("set sample rate");
         mp3_encoder
-            .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
+            .set_brate(mp3lame_encoder::Bitrate::Kbps320) // TODO(config
             .expect("set brate");
         let mut mp3_encoder = mp3_encoder.build().expect("Could not init LAME");
 
@@ -175,7 +172,7 @@ fn start_file_save_thread(
             };
 
             if desire_to_broadcast.load(Ordering::Relaxed) {
-                let mut recording_file = open_file_named_now();
+                let (mut recording_file, file_path) = open_file_named_now();
 
                 while desire_to_broadcast.load(Ordering::Relaxed) {
                     let mp3_buffer = make_mp3_samples(&mut mp3_encoder, &input);
@@ -206,10 +203,10 @@ fn start_file_save_thread(
                 is_recording = false;
                 let _ = &file_bus.send(AlasMessage::RecordingStopped);
                 println!("Stopped recording");
+
+                // Upload the file to Dropbox.
+                upload_file_to_dropbox(file_path, "".to_string(), file_bus.clone());
             }
-
-            // Upload the file to Dropbox.
-
         }
 
         let _ = &file_bus.send(AlasMessage::RecordingStopped);
@@ -218,20 +215,19 @@ fn start_file_save_thread(
 }
 
 fn start_icecast_thread(
-    audio_bus: &mut Bus<Vec<f32>>,
+    mut icecast_rx: BusReader<Vec<f32>>,
     desire_to_broadcast: Arc<AtomicBool>,
     state: Arc<RwLock<AlasState>>,
     message_bus: Sender<AlasMessage>,
     config_reset: Arc<AtomicBool>
 ) -> JoinHandle<&'static str> {
-    let mut icecast_rx = audio_bus.add_rx();
-
     task::spawn_blocking(move || {
+        // return "Abandoned early!!";
         // Set up the MP3 encoder.
         let mut mp3_encoder = mp3lame_encoder::Builder::new().expect("Could not create LAME");
         mp3_encoder.set_num_channels(2).expect("set channels"); // TODO(config)
         mp3_encoder
-            .set_sample_rate(44_100) // TODO(config)
+            .set_sample_rate(48_000) // TODO(config)
             .expect("set sample rate");
         mp3_encoder
             .set_brate(mp3lame_encoder::Bitrate::Kbps128) // TODO(config)
@@ -340,9 +336,9 @@ fn make_mp3_samples<T>(mp3_encoder: &mut Encoder, input: &[T]) -> Vec<u8> where 
     mp3_buffer
 }
 
-fn open_file_named_now() -> File {
+fn open_file_named_now() -> (File, String) {
     let formatted_time = chrono::Local::now().format("%Y-%m-%dT%H%M%S.mp3").to_string();
-    File::create(formatted_time).expect("to open file")
+    (File::create(&formatted_time).expect("to open file"), formatted_time)
 }
 
 fn connect_to_icecast(state: &SafeState) -> ShoutConn {
@@ -394,8 +390,9 @@ fn handle_samples<T>(
     let (left, right) = calculate_rms_levels(&input, channels);
     let _ = &bus.send(VolumeChange { left, right }).expect("Could not update volume");
 
-    let read_state = {
-        state.blocking_read().clone()
+    let read_state = match state.try_read() {
+        Ok(guard) => guard.clone(),
+        Err(_) => return, // Skip if can't acquire lock
     };
 
     if
@@ -407,13 +404,13 @@ fn handle_samples<T>(
             println!("Audio is now available!");
             desire_to_broadcast.store(true, Ordering::Relaxed);
 
-            let mut state = state.blocking_write();
-            (*state).is_audio_present = true;
+            if let Ok(mut state) = state.try_write() {
+                (*state).is_audio_present = true;
+            }
         }
         *audio_last_seen = SystemTime::now();
     } else if
         // Before we do anything else, verify that we should still be recording/streaming
-        // TODO(config): 15 seconds needs to be configured (and usually much longer)
         SystemTime::now().duration_since(*audio_last_seen).unwrap().as_secs() >
         (read_state.config.audio.silence_duration_before_deactivation as u64)
     {
@@ -421,11 +418,12 @@ fn handle_samples<T>(
             println!("There has been 15 seconds of silence!");
         }
         desire_to_broadcast.store(false, Ordering::Relaxed);
-        let mut state = state.blocking_write();
-        (*state).is_audio_present = false;
+        if let Ok(mut state) = state.try_write() {
+            (*state).is_audio_present = false;
+        }
     }
 
-    sender.broadcast(input.to_vec());
+    sender.broadcast(input.to_vec().clone());
 }
 
 fn calculate_rms_levels<T>(data: &[T], channels: usize) -> (f32, f32) where T: cpal::Sample {
@@ -482,8 +480,8 @@ mod test {
 
     #[test]
     fn test_rms() {
-        let quiet_samples = generate_sine_wave_pcm(440.0, 44100, 1.0, 32767 / 2);
-        let loud_samples = generate_sine_wave_pcm(440.0, 44100, 1.0, 32767);
+        let quiet_samples = generate_sine_wave_pcm(440.0, 48_000, 1.0, 32767 / 2);
+        let loud_samples = generate_sine_wave_pcm(440.0, 48_000, 1.0, 32767);
 
         let (quiet_rms, _) = calculate_rms_levels(&quiet_samples, 1);
         let (loud_rms, _) = calculate_rms_levels(&loud_samples, 1);

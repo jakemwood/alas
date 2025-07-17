@@ -1,24 +1,22 @@
-use std::fmt::Display;
+use crate::lcd_display::home_screen::HomeScreen;
 use crate::lcd_display::matrix_orbital::clear_screen;
 use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
 use alas_lib::state::SafeState;
-use menu_screen::MenuScreen;
-use screen::Screen;
-use serialport::{ DataBits, FlowControl, Parity, SerialPort, StopBits };
-use std::io::{ self, Read, Write };
-use std::sync::Arc;
-use std::time::Duration;
 use rocket::futures::AsyncWriteExt;
 use rocket::yansi::Paint;
-use tokio::sync::broadcast::{Receiver, Sender};
+use screen::Screen;
+use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
+use std::fmt::Display;
+use std::io::{self, Read, Write};
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use tokio::{join, select, signal, task};
 use tokio::time::sleep;
+use tokio::{join, select, signal, task};
 use udev::Enumerator;
-use udev::ffi::udev_monitor_filter_remove;
-use crate::lcd_display::home_screen::HomeScreen;
 
 mod home_screen;
 mod ip_screen;
@@ -30,6 +28,11 @@ mod upload_progress;
 //     println!("{}", std::any::type_name::<T>());
 // }
 
+fn random_number() -> u16 {
+    use rand::Rng;
+    rand::rng().random_range(1000..9999)
+}
+
 async fn handle_message(
     current_state: DisplayState,
     app_state: SafeState,
@@ -39,29 +42,42 @@ async fn handle_message(
     // Some messages are not screen-specific. Handle those here.
     match message {
         AlasMessage::RecordingStarted => {
-            let mut state = app_state.write().await;
-            (*state).is_recording = true;
-            change_on_air_lights(&state, write_port);
+            let (is_recording, is_streaming) = {
+                let mut state = app_state.write().await;
+                (*state).is_recording = true;
+                (state.is_recording, state.is_streaming)
+            }; // Write lock released here
+            change_on_air_lights_direct(is_recording, is_streaming, write_port);
         }
         AlasMessage::RecordingStopped => {
-            let mut state = app_state.write().await;
-            (*state).is_recording = false;
-            change_on_air_lights(&state, write_port);
+            let (is_recording, is_streaming) = {
+                let mut state = app_state.write().await;
+                (*state).is_recording = false;
+                (state.is_recording, state.is_streaming)
+            }; // Write lock released here
+            change_on_air_lights_direct(is_recording, is_streaming, write_port);
         }
         AlasMessage::StreamingStarted => {
-            let mut state = app_state.write().await;
-            (*state).is_streaming = true;
-            change_on_air_lights(&state, write_port);
+            let (is_recording, is_streaming) = {
+                let mut state = app_state.write().await;
+                (*state).is_streaming = true;
+                (state.is_recording, state.is_streaming)
+            }; // Write lock released here
+            change_on_air_lights_direct(is_recording, is_streaming, write_port);
         }
         AlasMessage::StreamingStopped => {
-            let mut state = app_state.write().await;
-            (*state).is_streaming = false;
-            change_on_air_lights(&state, write_port);
+            let (is_recording, is_streaming) = {
+                let mut state = app_state.write().await;
+                (*state).is_streaming = false;
+                (state.is_recording, state.is_streaming)
+            }; // Write lock released here
+            change_on_air_lights_direct(is_recording, is_streaming, write_port);
         }
         _ => {}
     }
     // At this point our write locks should be released, making way for a read lock below.
 
+    let random = random_number();
     let mut screen = current_state.write().await;
 
     // Clone this state so that we can release our lock quickly
@@ -72,7 +88,7 @@ async fn handle_message(
     if let Some(new_screen) = new_screen {
         if new_screen.as_any().type_id() != (*screen).as_any().type_id() {
             // Clear the screen
-            println!("Clearing the screen!! You should not see this message very often!");
+            println!("📺 Clearing the screen!! You should not see this message very often!");
             // print_type_of(&new_screen.as_any());
             // print_type_of(&(*screen).as_any());
             clear_screen(write_port).unwrap();
@@ -86,12 +102,16 @@ async fn handle_message(
 }
 
 fn change_on_air_lights(state: &AlasState, write_port: &mut Box<dyn SerialPort>) {
-    if state.is_recording {
+    change_on_air_lights_direct(state.is_recording, state.is_streaming, write_port);
+}
+
+fn change_on_air_lights_direct(is_recording: bool, is_streaming: bool, write_port: &mut Box<dyn SerialPort>) {
+    if is_recording {
         write_port.write_all(&[254, 87, 5]).unwrap();
     } else {
         write_port.write_all(&[254, 86, 5]).unwrap();
     }
-    if state.is_streaming {
+    if is_streaming {
         write_port.write_all(&[254, 87, 3]).unwrap();
     } else {
         write_port.write_all(&[254, 86, 3]).unwrap();
@@ -273,6 +293,7 @@ pub async fn start(
 ) -> JoinHandle<()> {
     let shared_state = shared_state.clone();
     tokio::spawn(async move {
+        println!("📺 Starting LCD thread...");
         thread_start(bus, shared_state.clone()).await
     })
 }
@@ -332,6 +353,7 @@ fn start_writer_thread(
     let mut lcd_rx = bus.subscribe();
     task::spawn(async move {
         // Now listen for any events that we need in order to process writes to our screen
+        println!("📺✏️ LCD writer thread has started...");
         loop {
             select! {
                 message = lcd_rx.recv() => {
@@ -341,7 +363,9 @@ fn start_writer_thread(
                             break;
                         }
                         Ok(message) => {
-                            // println!("📺✏️ Handling message... {:?}", message);
+                            if !matches!(message, AlasMessage::VolumeChange { .. }) {
+                                println!("📺✏️ Handling message... {:?}", message);
+                            }
                             handle_message(
                                 write_state.clone(),
                                 write_shared_state.clone(),
@@ -351,7 +375,7 @@ fn start_writer_thread(
                             // println!("📺✅️ Handling message...");
                         }
                         Err(e) => {
-                            println!("{:?}", e);
+                            println!("📺❌ LCD writer error: {:?}", e);
                             break;
                         }
                     }

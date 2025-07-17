@@ -19,10 +19,10 @@ async fn main() {
     let state = Arc::new(RwLock::new(AlasState::new()));
     let (event_bus, _) = broadcast::channel::<AlasMessage>(256);
 
+    let lcd_thread = lcd_display::start(event_bus.clone(), &state).await;
+
     let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
     let cell_changes = cell_observer.listen().await;
-
-    let lcd_thread = lcd_display::start(event_bus.clone(), &state).await;
 
     let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
     let wifi_changes = wifi_observer.listen();
@@ -33,9 +33,6 @@ async fn main() {
     let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
 
     // Wait for exit here! All code below is for clean-up!
-
-    // Test this!!
-    let dropbox = upload_file_to_dropbox("random_2gb.bin".to_string(), "/".to_string(), event_bus.clone()).await;
 
     signal::ctrl_c().await.expect("failed to listen for event");
     let _ = event_bus.send(AlasMessage::Exit);
