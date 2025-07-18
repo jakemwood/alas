@@ -77,7 +77,6 @@ async fn handle_message(
     }
     // At this point our write locks should be released, making way for a read lock below.
 
-    let random = random_number();
     let mut screen = current_state.write().await;
 
     // Clone this state so that we can release our lock quickly

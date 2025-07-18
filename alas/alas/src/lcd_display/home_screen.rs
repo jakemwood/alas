@@ -51,6 +51,14 @@ impl Screen for HomeScreen {
         } else {
             port.write_all(b"N").unwrap();
         }
+
+        // Wi-Fi? Y Cell N
+        port.write_all(&*matrix_orbital::set_cursor_bytes(15, 2)).unwrap();
+        if self.cell_ready {
+            port.write_all(b"Y").unwrap();
+        } else {
+            port.write_all(b"N").unwrap();
+        }
         // println!("Left volume {:?} Right Volume {:?}", self.left_volume, self.right_volume);
     }
 
@@ -58,8 +66,6 @@ impl Screen for HomeScreen {
         // All buttons should open the menu
         if button == TOP_LEFT_BUTTON {
             Some(Box::new(MenuScreen::new()))
-        } else if button == CENTER_BUTTON {
-            Some(Box::new(UploadScreen { progress: 10 }))
         } else {
             None
         }
@@ -104,6 +110,7 @@ impl Screen for HomeScreen {
                 )
             }
             AlasMessage::CellularStatusChange { new_state, .. } => {
+                println!("🏠 HomeScreen is cell ready? {:?}:", new_state == AlasWiFiState::Connected);
                 Some(
                     Box::new(HomeScreen {
                         cell_ready: new_state == AlasWiFiState::Connected,
