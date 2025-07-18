@@ -5,6 +5,7 @@ pre-build = [
         pkg-config:$CROSS_DEB_ARCH \
         libssl-dev:$CROSS_DEB_ARCH \
         ca-certificates:$CROSS_DEB_ARCH \
+        libasound2:$CROSS_DEB_ARCH \
         libasound2-dev:$CROSS_DEB_ARCH \
         libpulse-dev:$CROSS_DEB_ARCH \
         libdbus-1-dev:$CROSS_DEB_ARCH \
