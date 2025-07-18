@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Install dependencies
@@ -19,10 +19,13 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Build
         working-directory: alas
-        run: cargo build --verbose
+        run: just build
 
       - name: Run tests
         working-directory: alas
