@@ -5,3 +5,11 @@ export interface Network {
   frequency: number;
   security: string;
 }
+
+export interface DropboxStatus {
+  is_connected: boolean;
+}
+
+export interface DropboxUrl {
+  url: string;
+}

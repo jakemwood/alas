@@ -98,7 +98,7 @@ pub async fn start(
             sample_rate: cpal::SampleRate(48_000),
             buffer_size: BufferSize::Default,
         };
-        let stream = device
+        let stream = match device
             .build_input_stream(
                 &stream_config,
                 move |data, _: &_| {
@@ -113,8 +113,13 @@ pub async fn start(
                 },
                 err_fn,
                 None
-            )
-            .unwrap();
+            ) {
+                Ok(stream) => stream,
+                Err(e) => {
+                    eprintln!("Failed to build input stream: {}", e);
+                    panic!("Failed to build input stream: {}", e);
+                }
+            };
 
         stream.play().expect("Could not play");
         println!("After play!");

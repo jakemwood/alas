@@ -238,6 +238,11 @@ pub struct DropboxUrl {
     pub url: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DropboxStatus {
+    pub is_connected: bool,
+}
+
 #[get("/dropbox-link")]
 async fn get_dropbox_link(state: &State<SafeState>) -> Json<DropboxUrl> {
     let mut state = state.write().await;
@@ -304,6 +309,17 @@ async fn post_dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState
     }
 }
 
+#[get("/dropbox-status")]
+async fn get_dropbox_status(state: &State<SafeState>) -> Json<DropboxStatus> {
+    let state = state.read().await;
+    let is_connected = state.config.dropbox
+        .as_ref()
+        .and_then(|config| config.access_token.as_ref())
+        .is_some();
+    
+    Json(DropboxStatus { is_connected })
+}
+
 pub fn routes() -> Vec<Route> {
     routes![
         available_wifi,
@@ -316,5 +332,6 @@ pub fn routes() -> Vec<Route> {
         set_redundancy_config,
         post_dropbox_link,
         get_dropbox_link,
+        get_dropbox_status,
     ]
 }
