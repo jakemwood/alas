@@ -1,10 +1,10 @@
 set dotenv-load
 
-[working-directory('frontend')]
+[working-directory: 'frontend']
 @build-frontend:
     npm run build
 
-[working-directory('frontend')]
+[working-directory: 'frontend']
 @deploy-frontend:
     rsync -r dist/ ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}/static
 
