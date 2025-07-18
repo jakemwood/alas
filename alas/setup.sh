@@ -30,6 +30,24 @@ else
     echo "Polkit rule file already exists at $POLKIT_RULE_FILE."
 fi
 
+# Create the Polkit rule file for shutdown/reboot permissions
+SHUTDOWN_POLKIT_RULE_FILE="/etc/polkit-1/rules.d/50-allow-shutdown.rules"
+if [ ! -f "$SHUTDOWN_POLKIT_RULE_FILE" ]; then
+    echo "Creating Polkit rule file for shutdown/reboot permissions at $SHUTDOWN_POLKIT_RULE_FILE..."
+    sudo bash -c "cat > $SHUTDOWN_POLKIT_RULE_FILE" <<'EOF'
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.login1.power-off" ||
+         action.id == "org.freedesktop.login1.reboot") &&
+        subject.isInGroup("network")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+    echo "Shutdown/reboot Polkit rule file created successfully."
+else
+    echo "Shutdown/reboot Polkit rule file already exists at $SHUTDOWN_POLKIT_RULE_FILE."
+fi
+
 # Restart polkit to apply changes
 echo "Restarting polkit service to apply changes..."
 sudo systemctl restart polkit

@@ -1,5 +1,6 @@
 use crate::lcd_display::home_screen::HomeScreen;
 use crate::lcd_display::ip_screen::IPScreen;
+use crate::lcd_display::status_screen::StatusScreen;
 use crate::lcd_display::matrix_orbital::{
     clear_screen,
     BOTTOM_LEFT_BUTTON,
@@ -119,17 +120,23 @@ impl Screen for MenuScreen {
                     },
                     2 => {
                         // Reboot
-                        if let Err(e) = reboot() {
-                            eprintln!("Failed to reboot: {}", e);
+                        match reboot() {
+                            Ok(_) => Some(Box::new(StatusScreen::rebooting())),
+                            Err(e) => {
+                                eprintln!("Failed to reboot: {}", e);
+                                None
+                            }
                         }
-                        None
                     },
                     3 => {
                         // Shut down
-                        if let Err(e) = shutdown() {
-                            eprintln!("Failed to shutdown: {}", e);
+                        match shutdown() {
+                            Ok(_) => Some(Box::new(StatusScreen::shutting_down())),
+                            Err(e) => {
+                                eprintln!("Failed to shutdown: {}", e);
+                                None
+                            }
                         }
-                        None
                     },
                     _ => Some(Box::new(HomeScreen::new(app_state))),
                 }
