@@ -14,14 +14,17 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      - name: Install just
+        run: sudo apt-get -y install just
+
       - name: Install dependencies
         run: sudo apt-get -y install pkg-config libssl-dev ca-certificates libasound2-dev libpulse-dev libdbus-1-dev portaudio19-dev libudev-dev libshout3-dev
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Build
         working-directory: alas

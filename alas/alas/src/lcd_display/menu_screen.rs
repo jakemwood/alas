@@ -19,6 +19,7 @@ use std::cmp::{ max, min };
 use std::io::Write;
 use tokio::runtime::Handle;
 use tokio::task;
+use system_shutdown::{shutdown, reboot};
 
 #[derive(Clone, PartialEq)]
 pub struct MenuScreen {
@@ -115,7 +116,17 @@ impl Screen for MenuScreen {
                             });
                         });
                         Some(Box::new(HomeScreen::new(app_state)))
-                    }
+                    },
+                    2 => {
+                        // Reboot
+                        let _ = reboot();
+                        None
+                    },
+                    3 => {
+                        // Shut down
+                        let _ = shutdown();
+                        None
+                    },
                     _ => Some(Box::new(HomeScreen::new(app_state))),
                 }
             }
