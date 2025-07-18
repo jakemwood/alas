@@ -112,6 +112,11 @@ export function useApi() {
         body: JSON.stringify({code}),
       });
       return res.status == 201
+    },
+
+    async getDropboxStatus() {
+      const res = await fetch(`${API_BASE}/config/dropbox-status`, { headers });
+      return res.json();
     }
   };
 }

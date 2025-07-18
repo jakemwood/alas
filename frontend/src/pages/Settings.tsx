@@ -14,7 +14,23 @@ export function Settings() {
   const [dropboxUrl, setDropboxUrl] = useState("");
   const [isDropboxLinked, setIsDropboxLinked] = useState(false);
   const [isDropboxLoading, setIsDropboxLoading] = useState(false);
+  const [isDropboxStatusLoading, setIsDropboxStatusLoading] = useState(true);
   const api = useApi();
+
+  useEffect(() => {
+    const fetchDropboxStatus = async () => {
+      try {
+        const status = await api.getDropboxStatus();
+        setIsDropboxLinked(status.is_connected);
+      } catch (error) {
+        console.error('Failed to fetch Dropbox status:', error);
+      } finally {
+        setIsDropboxStatusLoading(false);
+      }
+    };
+
+    fetchDropboxStatus();
+  }, [api]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,13 +63,11 @@ export function Settings() {
 
     try {
       if (isDropboxLinked) {
-        // await api.unlinkDropbox();
         setIsDropboxLinked(false);
       } else {
-        window.location.href = dropboxUrl;
-        // window.location.href = dropboxUrl;
-        // await api.linkDropbox();
-        setIsDropboxLinked(true);
+        api.getDropboxLink().then(response => {
+          window.location.href = response;
+        });
       }
     } catch (err) {
       console.error('Failed to handle Dropbox link:', err);
@@ -61,12 +75,6 @@ export function Settings() {
       setIsDropboxLoading(false);
     }
   };
-
-  useEffect(() => {
-    api.getDropboxLink().then(response => {
-      setDropboxUrl(response);
-    });
-  }, []);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -149,21 +157,23 @@ export function Settings() {
           </span>
         </div>
         
-        <button
-          onClick={handleDropboxLink}
-          disabled={isDropboxLoading}
-          className={`px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            isDropboxLinked
-              ? 'bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500'
-              : 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500'
-          } disabled:opacity-50`}
-        >
-          {isDropboxLoading
-            ? 'Processing...'
-            : isDropboxLinked
-            ? 'Disconnect'
-            : 'Connect to Dropbox'}
-        </button>
+        {isDropboxLinked ? (
+          <span className="px-4 py-2 rounded-md text-sm font-medium bg-green-100 text-green-700">
+            Connected
+          </span>
+        ) : (
+          <button
+            onClick={handleDropboxLink}
+            disabled={isDropboxLoading || isDropboxStatusLoading}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          >
+            {isDropboxStatusLoading
+              ? 'Loading...'
+              : isDropboxLoading
+              ? 'Processing...'
+              : 'Connect to Dropbox'}
+          </button>
+        )}
       </div>
     </div>
   </div>
