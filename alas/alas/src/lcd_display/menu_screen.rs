@@ -119,12 +119,16 @@ impl Screen for MenuScreen {
                     },
                     2 => {
                         // Reboot
-                        let _ = reboot();
+                        if let Err(e) = reboot() {
+                            eprintln!("Failed to reboot: {}", e);
+                        }
                         None
                     },
                     3 => {
                         // Shut down
-                        let _ = shutdown();
+                        if let Err(e) = shutdown() {
+                            eprintln!("Failed to shutdown: {}", e);
+                        }
                         None
                     },
                     _ => Some(Box::new(HomeScreen::new(app_state))),
