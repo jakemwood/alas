@@ -15,7 +15,9 @@ jobs:
 
     steps:
       - name: Install just
-        run: sudo apt-get -y install just
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just@1.38.0   # or pin: just@1.53.0
 
       - name: Install dependencies
         run: sudo apt-get -y install pkg-config libssl-dev ca-certificates libasound2-dev libpulse-dev libdbus-1-dev portaudio19-dev libudev-dev libshout3-dev
