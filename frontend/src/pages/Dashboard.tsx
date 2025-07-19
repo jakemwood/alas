@@ -8,7 +8,7 @@ export function Dashboard() {
   const api = useApi();
 
   useEffect(() => {
-    api.getAudioStatus().then(response => {
+    api.getAudioStatus().then((response) => {
       console.log("audio", response);
       updateSystemStatus({
         audio: {
@@ -17,10 +17,10 @@ export function Dashboard() {
         },
         icecast: {
           connected: response.is_streaming,
-        }
+        },
       });
     });
-  }, [])
+  }, []);
 
   useEffect(() => {
     const unsubscribe = api.subscribeToVolumeUpdates((volume) => {
@@ -88,9 +88,9 @@ export function Dashboard() {
               <div
                 className="bg-blue-500 rounded-full h-2"
                 style={{
-                  width: `${
-                    (systemStatus.audio.currentVolume + 100).toString()
-                  }%`,
+                  width: `${(
+                    systemStatus.audio.currentVolume + 100
+                  ).toString()}%`,
                 }}
               />
             </div>

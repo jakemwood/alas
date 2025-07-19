@@ -1,7 +1,7 @@
-	  {
-"name": "alas",
-"compatibility_date": "2025-07-19",
-"assets": {
-  "directory": "./dist"
+{
+  "name": "alas",
+  "compatibility_date": "2025-07-19",
+  "assets": {
+    "directory": "./dist"
   }
- }
+}

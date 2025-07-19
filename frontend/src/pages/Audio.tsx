@@ -22,7 +22,9 @@ export function Audio() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.updateAudioConfig({
-      silence_duration_before_deactivation: parseInt(audioConfig.silenceDuration),
+      silence_duration_before_deactivation: parseInt(
+        audioConfig.silenceDuration
+      ),
       silence_threshold: parseInt(audioConfig.silenceThreshold),
     });
   };

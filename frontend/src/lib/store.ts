@@ -62,6 +62,6 @@ export const useStore = create<AppState>((set) => ({
   setRedundancyConfig: (config) => set({ redundancyConfig: config }),
   updateSystemStatus: (status) =>
     set((state) => {
-      return { systemStatus: { ...state.systemStatus, ...status }}
+      return { systemStatus: { ...state.systemStatus, ...status } };
     }),
 }));

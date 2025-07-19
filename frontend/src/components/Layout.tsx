@@ -1,6 +1,14 @@
 import React from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Settings, Wifi, Volume2, Radio, LogOut, Key, Share2 } from "lucide-react";
+import {
+  Settings,
+  Wifi,
+  Volume2,
+  Radio,
+  LogOut,
+  Key,
+  Share2,
+} from "lucide-react";
 import { useAuthStore } from "../lib/auth-store";
 
 const navItems = [

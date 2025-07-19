@@ -7,7 +7,7 @@ export function Network() {
   const { networkConfig, setNetworkConfig } = useStore();
 
   useEffect(() => {
-    api.getNetworkStatus().then(results => {
+    api.getNetworkStatus().then((results) => {
       setNetworkConfig({
         ...networkConfig,
         imei: results.imei,
@@ -69,9 +69,7 @@ export function Network() {
                 IMEI
               </label>
             </div>
-            <div>
-              {networkConfig.imei}
-            </div>
+            <div>{networkConfig.imei}</div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Name

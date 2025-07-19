@@ -4,7 +4,7 @@ export function useApi() {
   const authStore = useAuthStore();
   const API_BASE = `http://${authStore.ipAddress}`;
   const headers = {
-    "Authorization": `Bearer ${authStore.jwt}`
+    Authorization: `Bearer ${authStore.jwt}`,
   };
   return {
     async getNetworkConfig() {
@@ -99,7 +99,7 @@ export function useApi() {
     async getDropboxLink() {
       const res = await fetch(`${API_BASE}/config/dropbox-link`, {
         method: "GET",
-        headers: {"Content-Type": "application/json", ...headers},
+        headers: { "Content-Type": "application/json", ...headers },
       });
       const reply = await res.json();
       return reply.url;
@@ -108,15 +108,15 @@ export function useApi() {
     async linkDropbox(code: string) {
       const res = await fetch(`${API_BASE}/config/dropbox-link`, {
         method: "POST",
-        headers: {"Content-Type": "application/json", ...headers},
-        body: JSON.stringify({code}),
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({ code }),
       });
-      return res.status == 201
+      return res.status == 201;
     },
 
     async getDropboxStatus() {
       const res = await fetch(`${API_BASE}/config/dropbox-status`, { headers });
       return res.json();
-    }
+    },
   };
 }
