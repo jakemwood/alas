@@ -125,9 +125,18 @@ async fn do_upload(file_path: String,
                                         progress: 100,
                                         queue: vec![],
                                     });
+                                    // Delete the file
+                                    match tokio::fs::remove_file(&file_path).await {
+                                        Ok(_) => {
+                                            println!("📦 Deleted file {}", file_path);
+                                        },
+                                        Err(e) => {
+                                            println!("📦 Failed to delete file: {}", e);
+                                        }
+                                    }
                                 },
                                 Err(e) => {
-                                    println!("Failed to complete upload: {:?}", e);
+                                    println!("📦 Failed to complete upload: {:?}", e);
                                     // Reset upload state
                                     reset_upload_state(&message_bus);
                                 }
@@ -150,7 +159,7 @@ async fn do_upload(file_path: String,
 
                                     // Only send updates when progress increases by at least 5%
                                     if progress >= last_progress_reported + 5 || progress == 100 {
-                                        println!("Uploading {}... {}%", file_name, progress);
+                                        println!("📦 Uploading {}... {}%", file_name, progress);
                                         last_progress_reported = progress;
 
                                         // Update progress
@@ -162,7 +171,7 @@ async fn do_upload(file_path: String,
                                     }
                                 },
                                 Err(e) => {
-                                    println!("Failed to upload chunk: {:?}", e);
+                                    println!("📦 Failed to upload chunk: {:?}", e);
                                     // Reset upload state
                                     reset_upload_state(&message_bus);
                                     break;
@@ -172,13 +181,13 @@ async fn do_upload(file_path: String,
                     }
                 },
                 Err(e) => {
-                    println!("Failed to start upload session: {:?}", e);
+                    println!("📦 Failed to start upload session: {:?}", e);
                     reset_upload_state(&message_bus);
                 }
             }
         },
         Err(e) => {
-            println!("Failed to read file for upload: {:?}", e);
+            println!("📦 Failed to read file for upload: {:?}", e);
             reset_upload_state(&message_bus);
         }
     }

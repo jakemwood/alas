@@ -104,13 +104,11 @@ impl Screen for HomeScreen {
                 }
             }
             AlasMessage::UploadStateChange { new_state } => {
-                println!("🏠 HomeScreen received UploadStateChange: {:?}", new_state);
                 Some(
                     Box::new(UploadScreen { progress: new_state.progress })
                 )
             }
             AlasMessage::CellularStatusChange { new_state, .. } => {
-                println!("🏠 HomeScreen is cell ready? {:?}:", new_state == AlasWiFiState::Connected);
                 Some(
                     Box::new(HomeScreen {
                         cell_ready: new_state == AlasWiFiState::Connected,

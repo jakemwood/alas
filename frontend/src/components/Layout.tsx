@@ -15,8 +15,8 @@ const navItems = [
   { path: "/", label: "Dashboard", icon: Settings },
   { path: "/network", label: "Network", icon: Wifi },
   { path: "/audio", label: "Audio", icon: Volume2 },
-  { path: "/icecast", label: "Icecast", icon: Radio },
   { path: "/redundancy", label: "Redundancy", icon: Share2 },
+  { path: "/icecast", label: "Icecast", icon: Radio },
   { path: "/settings", label: "Settings", icon: Key },
 ];
 

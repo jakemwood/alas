@@ -7,6 +7,7 @@ pub mod state;
 mod utils;
 pub mod wifi;
 pub mod cellular;
+pub mod redundancy;
 
 use crate::modem_manager::ModemSimpleProxy;
 use zbus::Connection;

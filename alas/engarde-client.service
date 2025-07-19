@@ -1,0 +1,22 @@
+[Unit]
+Description=Engarde Client - VPN Bonding Service
+After=network.target wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/engarde-client /path/to/alas/engarde.yml
+Restart=always
+RestartSec=5
+User=alas
+Group=alas
+WorkingDirectory=/path/to/alas
+StandardOutput=journal
+StandardError=journal
+
+# Allow network configuration capabilities
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target

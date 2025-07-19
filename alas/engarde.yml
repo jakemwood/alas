@@ -1,0 +1,25 @@
+client:
+  # A custom description for this client instance. It will be displayed on startup and in the management interface to help you identifying it.
+  description: "Alas Client"
+  # This is the engarde listen address: WireGuard peer endpoint will need to point here.
+  listenAddr: "127.0.0.1:59401"
+  # This is the address of the engarde server on the other side
+  dstAddr: "1.2.3.4:59501"
+  # A timeout in milliseconds for socket writes. You can try to lower it if you're experiencing latency peaks, or raising it if the connection is unstable.
+  # You can disable write timeout by setting a negative value (like -1), but it's easy to have issues if you need low latency.
+  writeTimeout: 10
+  # By default, engarde sends packets through all the available network interfaces.
+  # You will probably need to exclude some interfaces (Bluetooth or virtual ones, for example).
+  # Lauch "engarde-client list-interfaces" to show all the detected interfaces, and form your own list based on that.
+  # If you don't need to exclude any interface, you can omit this or just write `excludedInterfaces: []`
+  excludedInterfaces:
+    - "lo"
+    - "tailscale0"
+  # You can control engarde-client by accessing the web management interface. Here you can specify its parameters.
+  # If you don't want a management interface, you can omit this section.
+  webManager:
+    # The address to listen to. Leave it empty to disable the management webserver.
+    listenAddr: "0.0.0.0:9001"
+    # The credentials to access the management interface. Leave them empty or omit them for no authentication.
+    username: "engarde"
+    password: "engarde"

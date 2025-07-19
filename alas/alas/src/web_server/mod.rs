@@ -1,11 +1,14 @@
 use std::net::Ipv4Addr;
+use std::sync::Arc;
 use rocket::{post, routes, Build, Config, Ignite, Rocket};
 use rocket::fs::FileServer;
 use rocket_cors::AllowedOrigins;
 use tokio::sync::broadcast::{Receiver, Sender };
+use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use alas_lib::do_things;
 use alas_lib::state::{AlasMessage, SafeState};
+use crate::redundancy::RedundancyManager;
 
 mod auth;
 mod status;
@@ -24,6 +27,14 @@ pub async fn run_rocket_server(
     println!("Starting web server...");
     let tokio_state = alas_state.clone();
     tokio::spawn(async move {
+        // Initialize RedundancyManager
+        let redundancy_manager = RedundancyManager::new();
+        if let Err(e) = redundancy_manager.initialize().await {
+            eprintln!("Failed to initialize redundancy manager: {}", e);
+            // log::error!("Failed to initialize redundancy manager: {}", e);
+        }
+        let redundancy_manager = Arc::new(Mutex::new(redundancy_manager));
+
         let allowed_origins = AllowedOrigins::some_exact(
             &["http://localhost:5173", "https://alas.krdf.org"]
         );
@@ -36,6 +47,7 @@ pub async fn run_rocket_server(
         rocket::build()
             .manage(bus)
             .manage(tokio_state.clone())
+            .manage(redundancy_manager)
             .manage(cors.clone()) // Ensure Cors is managed
             .configure(Config {
                 address: Ipv4Addr::new(0, 0, 0, 0).into(),
