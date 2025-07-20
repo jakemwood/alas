@@ -2,18 +2,17 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use defguard_wireguard_rs::{InterfaceConfiguration, Kernel, WGApi, WireguardInterfaceApi};
-use defguard_wireguard_rs::net::IpAddrMask;
-use defguard_wireguard_rs::key::Key;
-use defguard_wireguard_rs::host::Peer;
+use crate::config::{
+    load_config_async, save_config_async, AlasConfig, AlasRedundancyConfig, RedundancyError,
+};
+use wg_config::{WgConf, WgInterface, WgPeer, WgPrivateKey, WgPublicKey};
 use ipnet::IpNet;
 use log::{error, info, warn};
+use rocket::yansi::Paint;
 use serde::{Deserialize, Serialize};
+use std::process::Command as StdCommand;
 use tokio::fs;
 use tokio::process::Command;
-use std::process::Command as StdCommand;
-use rocket::yansi::Paint;
-use crate::config::{load_config_async, save_config_async, AlasConfig, AlasRedundancyConfig, RedundancyError};
 
 // Web API structs that don't expose private keys
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -106,9 +105,13 @@ impl RedundancyManager {
             client: EngardeClientConfig {
                 description: "Alas Client - Unconfigured".to_string(),
                 listen_addr: "127.0.0.1:59401".to_string(),
-                dst_addr: "0.0.0.0:59501".to_string(), // Placeholder
+                dst_addr: "0.0.0.0:59501".to_string(),
                 write_timeout: 10,
-                excluded_interfaces: vec!["lo".to_string(), "tailscale0".to_string()],
+                excluded_interfaces: vec![
+                    "wg0".to_string(),
+                    "lo".to_string(),
+                    "tailscale0".to_string(),
+                ],
                 web_manager: Some(EngardeWebManager {
                     listen_addr: "0.0.0.0:9001".to_string(),
                     username: "engarde".to_string(),
@@ -125,9 +128,7 @@ impl RedundancyManager {
     /// Creates a default configuration with a pre-generated client private key
     /// This represents an unconfigured but initialized state
     pub fn create_alas_redundancy_config_default() -> AlasRedundancyConfig {
-        use defguard_wireguard_rs::key::Key;
-
-        let client_key = Key::generate();
+        let client_key = WgPrivateKey::generate();
         AlasRedundancyConfig {
             server_ip: String::new(),
             port: 59501,
@@ -139,7 +140,7 @@ impl RedundancyManager {
     /// Initialize a default Alas redundancy configuration if none exists
     pub async fn initialize_default_config(&self) -> Result<(), RedundancyError> {
         let alas_config = load_config_async().await;
-        
+
         if alas_config.redundancy.is_none() {
             let default_config = RedundancyManager::create_alas_redundancy_config_default();
             let mut updated_config = alas_config;
@@ -147,20 +148,20 @@ impl RedundancyManager {
             save_config_async(&updated_config).await;
             info!("Initialized default redundancy configuration with pre-generated client key");
         }
-        
+
         Ok(())
     }
 
     /// Get the current redundancy configuration, failing if not initialized
     pub async fn get_current_config(&self) -> Result<AlasRedundancyConfig, RedundancyError> {
         let alas_config = load_config_async().await;
-        
+
         match alas_config.redundancy {
             Some(config) => {
                 config.validate()?;
                 Ok(config)
             }
-            None => Err(RedundancyError::ConfigNotInitialized)
+            None => Err(RedundancyError::ConfigNotInitialized),
         }
     }
 
@@ -199,7 +200,10 @@ impl RedundancyManager {
     // }
 
     pub async fn update_config(&self, config: AlasRedundancyConfig) -> Result<(), RedundancyError> {
-        info!("Updating redundancy configuration for {}:{}", config.server_ip, config.port);
+        info!(
+            "Updating redundancy configuration for {}:{}",
+            config.server_ip, config.port
+        );
 
         // 1. Validate input
         config.validate()?;
@@ -240,75 +244,98 @@ impl RedundancyManager {
         Ok(())
     }
 
-    async fn update_wireguard_interface(&self, config: &AlasRedundancyConfig) -> Result<(), RedundancyError> {
-        let wg_api: WGApi<Kernel> = WGApi::new(self.wg_interface.clone())
-            .map_err(|e| RedundancyError::WireGuardError(e.to_string()))?;
-
-        // Try to remove existing interface first to avoid "address already in use" error
-        if let Err(e) = wg_api.remove_interface() {
-            warn!("Failed to remove existing interface: {}", e);
-        }
-
-        // Create new interface
-        wg_api.create_interface()
-            .map_err(|e| RedundancyError::WireGuardError(format!("Failed to create interface: {}", e.to_string())))?;
-
-        println!("Created interface!");
-
-        // Read the newly created interface data
-        let current_config = wg_api.read_interface_data()
-            .map_err(|e| RedundancyError::WireGuardError(format!("Failed to read interface data: {}", e.to_string())))?;
-
-        for (key, _) in current_config.peers {
-            println!("Removing a peer...");
-            wg_api.remove_peer(&key)
-                .map_err(|e| RedundancyError::WireGuardError(format!("Step 3: {}", e.to_string())))?;
-        }
-
-        // Add new peer using the correct API
-        let peer_key: Key = config.server_public_key.parse()
+    async fn update_wireguard_interface(
+        &self,
+        config: &AlasRedundancyConfig,
+    ) -> Result<(), RedundancyError> {
+        // Create WireGuard configuration using wg-config
+        let private_key: WgPrivateKey = config.client_private_key.parse()
+            .map_err(|e| RedundancyError::InvalidPrivateKey(format!("Failed to parse private key: {}", e)))?;
+        
+        let server_public_key: WgPublicKey = config.server_public_key.parse()
             .map_err(|e| RedundancyError::InvalidPublicKey(format!("Failed to parse public key: {}", e)))?;
 
-        println!("Created peer key: {}", peer_key);
-
-        // Create peer with routing configuration
-        let allowed_ips = vec![
-            IpAddrMask::from_str("10.88.7.1/32")
-                .map_err(|e| RedundancyError::WireGuardError(format!("Step 4: {}", e.to_string())))?
-        ];
-
-        println!("Allowed IPs: {:#?}", allowed_ips);
-
-        let mut peer = Peer::new(peer_key.clone());
-        let endpoint: SocketAddr = "127.0.0.1:59401".parse().unwrap();
-        peer.endpoint = Some(endpoint);
-        peer.allowed_ips = allowed_ips;
-
-        println!("Created peer: {:#?}", peer);
-
-        println!("Private key: {}", config.client_private_key);
-        
-        let interface_config = InterfaceConfiguration {
-            name: self.wg_interface.clone(),
-            prvkey: config.client_private_key.clone(),
-            addresses: vec!["10.88.7.2".parse().unwrap()],
-            port: 56882,
-            peers: vec![peer],
-            mtu: None,
+        // Create interface configuration
+        let interface = WgInterface {
+            private_key: Some(private_key),
+            listen_port: Some(56882),
+            address: vec!["10.88.7.2/32".parse().unwrap()],
+            ..Default::default()
         };
-        println!("Interface config: {:#?}", interface_config);
 
-        wg_api.configure_interface(&interface_config)
-            .map_err(|e| RedundancyError::WireGuardError(format!("Step 5: {}", e.to_string())))?;
+        // Create peer configuration
+        let peer = WgPeer {
+            public_key: server_public_key,
+            allowed_ips: vec!["10.88.7.1/32".parse().unwrap()],
+            endpoint: Some("127.0.0.1:59401".parse().unwrap()),
+            ..Default::default()
+        };
 
-        println!("Configured wireguard interface!");
+        // Create complete WireGuard configuration
+        let wg_conf = WgConf {
+            interface,
+            peers: vec![peer],
+        };
 
-        wg_api.configure_peer_routing(&interface_config.peers)
-            .map_err(|e| RedundancyError::WireGuardError(format!("Step 6: {}", e.to_string())))?;
+        // Write configuration to file
+        let config_path = format!("/etc/wireguard/{}.conf", self.wg_interface);
+        let config_content = wg_conf.to_string();
+        
+        // Write config file (requires sudo privileges)
+        let temp_path = format!("/tmp/{}.conf", self.wg_interface);
+        fs::write(&temp_path, config_content).await
+            .map_err(|e| RedundancyError::FileSystemError(e.to_string()))?;
+        
+        // Move to final location with sudo
+        let output = Command::new("sudo")
+            .args(["mv", &temp_path, &config_path])
+            .output()
+            .await
+            .map_err(|e| RedundancyError::WireGuardError(format!("Failed to move config file: {}", e)))?;
 
-        println!("Configured peer routing!");
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(RedundancyError::WireGuardError(format!(
+                "Failed to move WireGuard config: {}", error
+            )));
+        }
 
-        info!("Updated WireGuard peer configuration");
+        // Restart WireGuard interface using wg-quick
+        self.restart_wireguard_interface().await?;
+
+        info!("Updated WireGuard configuration file");
+        Ok(())
+    }
+
+    async fn restart_wireguard_interface(&self) -> Result<(), RedundancyError> {
+        info!("Restarting WireGuard interface");
+
+        // Stop existing interface if running
+        let stop_output = Command::new("sudo")
+            .args(["wg-quick", "down", &self.wg_interface])
+            .output()
+            .await?;
+
+        // Don't fail if interface wasn't running
+        if !stop_output.status.success() {
+            warn!("WireGuard interface may not have been running: {}", 
+                  String::from_utf8_lossy(&stop_output.stderr));
+        }
+
+        // Start the interface
+        let start_output = Command::new("sudo")
+            .args(["wg-quick", "up", &self.wg_interface])
+            .output()
+            .await?;
+
+        if !start_output.status.success() {
+            let error = String::from_utf8_lossy(&start_output.stderr);
+            return Err(RedundancyError::WireGuardError(format!(
+                "Failed to start WireGuard interface: {}", error
+            )));
+        }
+
+        info!("WireGuard interface restarted successfully");
         Ok(())
     }
 
@@ -318,8 +345,7 @@ impl RedundancyManager {
             // Check to make sure the server has been configured
             if !config.server_ip.is_empty() {
                 self.update_wireguard_interface(&config).await
-            }
-            else {
+            } else {
                 // Still probably ok
                 Ok(())
             }
@@ -329,7 +355,10 @@ impl RedundancyManager {
         }
     }
 
-    async fn update_engarde_config(&self, config: &AlasRedundancyConfig) -> Result<(), RedundancyError> {
+    async fn update_engarde_config(
+        &self,
+        config: &AlasRedundancyConfig,
+    ) -> Result<(), RedundancyError> {
         // Read existing config
         let content = fs::read_to_string(&self.engarde_config_path).await?;
         let mut engarde_config: EngardeConfig = serde_yaml::from_str(&content)?;
@@ -363,7 +392,10 @@ impl RedundancyManager {
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
-            return Err(RedundancyError::ServiceError(format!("Failed to restart engarde-client: {}", error)));
+            return Err(RedundancyError::ServiceError(format!(
+                "Failed to restart engarde-client: {}",
+                error
+            )));
         }
 
         // Wait a moment for service to start
@@ -376,7 +408,9 @@ impl RedundancyManager {
             .await?;
 
         if !status_output.status.success() {
-            return Err(RedundancyError::ServiceError("Engarde service failed to start".to_string()));
+            return Err(RedundancyError::ServiceError(
+                "Engarde service failed to start".to_string(),
+            ));
         }
 
         info!("Engarde service restarted successfully");
@@ -385,8 +419,9 @@ impl RedundancyManager {
 
     /// Derive client public key from private key - no placeholders allowed
     fn derive_client_public_key(private_key: &str) -> Result<String, RedundancyError> {
-        let key: Key = private_key.parse()
-            .map_err(|e| RedundancyError::InvalidPrivateKey(format!("Failed to parse private key: {}", e)))?;
+        let key: WgPrivateKey = private_key.parse().map_err(|e| {
+            RedundancyError::InvalidPrivateKey(format!("Failed to parse private key: {}", e))
+        })?;
         Ok(key.public_key().to_string())
     }
 
@@ -394,7 +429,7 @@ impl RedundancyManager {
     pub async fn get_web_config(&self) -> Result<RedundancyWebResponse, RedundancyError> {
         let config = self.get_current_config().await?;
         let client_public_key = Self::derive_client_public_key(&config.client_private_key)?;
-        
+
         Ok(RedundancyWebResponse {
             server_ip: config.server_ip,
             port: config.port,
@@ -405,7 +440,10 @@ impl RedundancyManager {
 
     /// Web API method to update config from web request (without private key)
     /// Requires that configuration has been initialized first
-    pub async fn update_web_config(&self, web_request: RedundancyWebRequest) -> Result<(), RedundancyError> {
+    pub async fn update_web_config(
+        &self,
+        web_request: RedundancyWebRequest,
+    ) -> Result<(), RedundancyError> {
         // Load current config to preserve the private key - fail if not initialized
         let current_config = self.get_current_config().await?;
 
@@ -438,20 +476,22 @@ impl From<RedundancyError> for rocket::http::Status {
     fn from(err: RedundancyError) -> Self {
         use rocket::http::Status;
         match err {
-            RedundancyError::InvalidIpAddress(_) |
-            RedundancyError::InvalidPort(_) |
-            RedundancyError::InvalidPublicKey(_) |
-            RedundancyError::InvalidPrivateKey(_) => Status::BadRequest,
+            RedundancyError::InvalidIpAddress(_)
+            | RedundancyError::InvalidPort(_)
+            | RedundancyError::InvalidPublicKey(_)
+            | RedundancyError::InvalidPrivateKey(_) => Status::BadRequest,
 
-            RedundancyError::ConfigNotInitialized |
-            RedundancyError::ConfigIncomplete(_) => Status::PreconditionFailed,
+            RedundancyError::ConfigNotInitialized | RedundancyError::ConfigIncomplete(_) => {
+                Status::PreconditionFailed
+            }
 
-            RedundancyError::WireGuardError(_) |
-            RedundancyError::EngardeError(_) |
-            RedundancyError::ServiceError(_) => Status::InternalServerError,
+            RedundancyError::WireGuardError(_)
+            | RedundancyError::EngardeError(_)
+            | RedundancyError::ServiceError(_) => Status::InternalServerError,
 
-            RedundancyError::FileSystemError(_) |
-            RedundancyError::YamlError(_) => Status::InternalServerError,
+            RedundancyError::FileSystemError(_) | RedundancyError::YamlError(_) => {
+                Status::InternalServerError
+            }
         }
     }
 }

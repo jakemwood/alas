@@ -29,7 +29,7 @@ dropbox-sdk = {  version = "0.19.1", features=["async_routes", "default_async_cl
 bytes = "1.8.0"
 
 # Wireguard
-defguard_wireguard_rs = "0.7.5"
+wg-config = "0.2.0"
 ipnet = "2.9"
 thiserror = "1.0"
 log = "0.4"

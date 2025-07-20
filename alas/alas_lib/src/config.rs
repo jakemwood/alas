@@ -125,8 +125,6 @@ pub struct AlasRedundancyConfig {
 }
 
 impl AlasRedundancyConfig {
-
-
     /// Validates that all configuration fields are properly formatted
     pub fn validate(&self) -> Result<(), RedundancyError> {
         // Validate IP address
