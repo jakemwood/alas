@@ -56,7 +56,7 @@ sudo systemctl restart polkit
 sudo apt install wireguard
 
 # Install engarde-client
-echo "Downloading EnGarde server..."
+echo "Downloading EnGarde client..."
 ENGARDE_BINARY="/usr/bin/engarde-client"
 ENGARDE_URL="https://engarde.linuxzogno.org/builds/master/linux/arm/engarde-client"
 sudo curl -L -o "$ENGARDE_BINARY" "$ENGARDE_URL"

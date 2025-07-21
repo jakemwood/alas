@@ -36,7 +36,7 @@ pub async fn run_rocket_server(
         let redundancy_manager = Arc::new(Mutex::new(redundancy_manager));
 
         let allowed_origins = AllowedOrigins::some_exact(
-            &["http://localhost:5173", "https://alas.krdf.org"]
+            &["http://localhost:5173", "https://alas.krdf.org", "http://alasradio.local:8000"]
         );
 
         let cors = (rocket_cors::CorsOptions {

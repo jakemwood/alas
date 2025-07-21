@@ -125,6 +125,8 @@ impl CellObserver {
         let cloned_self = self.clone();
 
         tokio::spawn(async move {
+            println!("📲 Spawned cellular status listener");
+
             let connection = Connection::system().await.expect("Could not get bus");
             let mut device = find_modem_device(&connection).await;
 
@@ -142,6 +144,14 @@ impl CellObserver {
             }
 
             let device = device.unwrap();
+
+            // Get the initial device state
+            let initial_state = device.state().await.unwrap();
+            let initial_quality = Self::get_quality().await;
+            println!("📲 Initial state: {:?} Quality: {}", initial_state, initial_quality);
+            self.set_current_state(
+                initial_state, initial_quality
+            ).await;
 
             let mut state_change_stream = device
                 .receive_signal_state_changed().await
@@ -207,9 +217,11 @@ impl CellObserver {
         };
         (*write_state).cell_on = new_state == AlasWiFiState::Connected;
         (*write_state).cell_strength = quality;
-        let _ = self.sender.send(AlasMessage::CellularStatusChange {
+        if let Err(e) = self.sender.send(AlasMessage::CellularStatusChange {
             new_state,
             cellular_strength: quality,
-        });
+        }) {
+            println!("Warning: Failed to send upload state update: {}", e);
+        }
     }
 }

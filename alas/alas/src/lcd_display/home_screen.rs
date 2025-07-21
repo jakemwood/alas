@@ -87,21 +87,12 @@ impl Screen for HomeScreen {
                 )
             }
             AlasMessage::NetworkStatusChange { new_state } => {
-                if new_state == AlasWiFiState::Connected {
-                    Some(
-                        Box::new(HomeScreen {
-                            wifi_ready: true,
-                            ..*self
-                        })
-                    )
-                } else {
-                    Some(
-                        Box::new(HomeScreen {
-                            wifi_ready: false,
-                            ..*self
-                        })
-                    )
-                }
+                Some(
+                    Box::new(HomeScreen {
+                        wifi_ready: new_state == AlasWiFiState::Connected,
+                        ..*self
+                    })
+                )
             }
             AlasMessage::UploadStateChange { new_state } => {
                 Some(

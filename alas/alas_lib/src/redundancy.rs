@@ -253,14 +253,11 @@ impl RedundancyManager {
         wg_api.create_interface()
             .map_err(|e| RedundancyError::WireGuardError(format!("Failed to create interface: {}", e.to_string())))?;
 
-        println!("Created interface!");
-
         // Read the newly created interface data
         let current_config = wg_api.read_interface_data()
             .map_err(|e| RedundancyError::WireGuardError(format!("Failed to read interface data: {}", e.to_string())))?;
 
         for (key, _) in current_config.peers {
-            println!("Removing a peer...");
             wg_api.remove_peer(&key)
                 .map_err(|e| RedundancyError::WireGuardError(format!("Step 3: {}", e.to_string())))?;
         }
@@ -269,24 +266,16 @@ impl RedundancyManager {
         let peer_key: Key = config.server_public_key.parse()
             .map_err(|e| RedundancyError::InvalidPublicKey(format!("Failed to parse public key: {}", e)))?;
 
-        println!("Created peer key: {}", peer_key);
-
         // Create peer with routing configuration
         let allowed_ips = vec![
             IpAddrMask::from_str("10.88.7.1/32")
                 .map_err(|e| RedundancyError::WireGuardError(format!("Step 4: {}", e.to_string())))?
         ];
 
-        println!("Allowed IPs: {:#?}", allowed_ips);
-
         let mut peer = Peer::new(peer_key.clone());
         let endpoint: SocketAddr = "127.0.0.1:59401".parse().unwrap();
         peer.endpoint = Some(endpoint);
         peer.allowed_ips = allowed_ips;
-
-        println!("Created peer: {:#?}", peer);
-
-        println!("Private key: {}", config.client_private_key);
         
         let interface_config = InterfaceConfiguration {
             name: self.wg_interface.clone(),
@@ -296,19 +285,14 @@ impl RedundancyManager {
             peers: vec![peer],
             mtu: None,
         };
-        println!("Interface config: {:#?}", interface_config);
 
         wg_api.configure_interface(&interface_config)
             .map_err(|e| RedundancyError::WireGuardError(format!("Step 5: {}", e.to_string())))?;
 
-        println!("Configured wireguard interface!");
-
         wg_api.configure_peer_routing(&interface_config.peers)
             .map_err(|e| RedundancyError::WireGuardError(format!("Step 6: {}", e.to_string())))?;
 
-        println!("Configured peer routing!");
-
-        info!("Updated WireGuard peer configuration");
+        println!("Updated WireGuard peer configuration");
         Ok(())
     }
 
