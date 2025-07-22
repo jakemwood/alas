@@ -4,20 +4,31 @@ mod web_server;
 use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
 use alas_lib::wifi::{ WiFiObserver };
-use alas_lib::cellular::{ connect_to_cellular, CellObserver };
+use alas_lib::cellular::{ CellObserver };
+use alas_lib::redundancy;
 use serialport::SerialPort;
 use std::io::Write;
 use std::sync::Arc;
 use tokio;
 use tokio::signal;
 use tokio::sync::{ broadcast, RwLock };
-use alas_lib::dropbox::upload_file_to_dropbox;
 
 #[tokio::main]
 async fn main() {
     // TODO: this was originally designed to be Redux-like but then it turned evil. Refactor.
     let state = Arc::new(RwLock::new(AlasState::new()));
     let (event_bus, _) = broadcast::channel::<AlasMessage>(256);
+
+    // Initialize redundancy manager and WireGuard interface
+    let redundancy_manager = redundancy::RedundancyManager::new();
+    if let Err(e) = redundancy_manager.initialize().await {
+        eprintln!("Failed to initialize redundancy manager: {}", e);
+    }
+    
+    // Initialize WireGuard interface on startup
+    if let Err(e) = redundancy_manager.start_wireguard_interface().await {
+        eprintln!("Failed to initialize WireGuard interface: {}", e);
+    }
 
     let lcd_thread = lcd_display::start(event_bus.clone(), &state).await;
 

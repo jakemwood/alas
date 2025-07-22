@@ -8,6 +8,9 @@ set dotenv-load
 @deploy-frontend:
     rsync -r dist/ ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}/static
 
+check:
+    cross check --target aarch64-unknown-linux-gnu
+
 build:
     cross build --target aarch64-unknown-linux-gnu --release
 

@@ -89,7 +89,7 @@ export function useApi() {
 
     async updateRedundancyConfig(config: any) {
       const res = await fetch(`${API_BASE}/config/redundancy`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify(config),
       });

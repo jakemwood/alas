@@ -52,4 +52,18 @@ fi
 echo "Restarting polkit service to apply changes..."
 sudo systemctl restart polkit
 
+# Install Wireguard
+sudo apt install wireguard
+
+# Install engarde-client
+echo "Downloading EnGarde server..."
+ENGARDE_BINARY="/usr/bin/engarde-client"
+ENGARDE_URL="https://engarde.linuxzogno.org/builds/master/linux/arm/engarde-client"
+sudo curl -L -o "$ENGARDE_BINARY" "$ENGARDE_URL"
+sudo chmod +x "$ENGARDE_BINARY"
+
+# Grant more netowrk permissions
+# TODO: make sure to set ./alas to the actual installed path
+#sudo setcap cap_net_admin+ep ./alas
+
 echo "Setup complete. Log out and log back in for group changes to take effect."

@@ -40,7 +40,8 @@ export const useStore = create<AppState>((set) => ({
   redundancyConfig: {
     serverIp: "",
     port: 56882,
-    publicKey: "",
+    clientPublicKey: "",
+    serverPublicKey: "",
   },
   systemStatus: {
     network: {

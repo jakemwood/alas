@@ -26,7 +26,8 @@ export interface IcecastConfig {
 export interface RedundancyConfig {
   serverIp: string;
   port: number;
-  publicKey: string;
+  clientPublicKey: string;
+  serverPublicKey: string;
 }
 
 export interface SystemStatus {

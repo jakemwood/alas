@@ -11,7 +11,8 @@ export function Redundancy() {
       setRedundancyConfig({
         serverIp: response.server_ip,
         port: response.port,
-        publicKey: response.public_key,
+        serverPublicKey: response.server_public_key,
+        clientPublicKey: response.client_public_key,
       });
     });
   }, []);
@@ -21,7 +22,7 @@ export function Redundancy() {
     await api.updateRedundancyConfig({
       server_ip: redundancyConfig.serverIp,
       port: redundancyConfig.port,
-      public_key: redundancyConfig.publicKey,
+      server_public_key: redundancyConfig.serverPublicKey,
     });
   };
 
@@ -71,20 +72,29 @@ export function Redundancy() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Public Key
+            Server Public Key
           </label>
           <textarea
-            value={redundancyConfig.publicKey}
+            value={redundancyConfig.serverPublicKey}
             onChange={(e) =>
               setRedundancyConfig({
                 ...redundancyConfig,
-                publicKey: e.target.value,
+                serverPublicKey: e.target.value,
               })
             }
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
-            placeholder="Enter WireGuard public key..."
+            placeholder="Enter WireGuard server public key..."
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Client Public Key
+          </label>
+          <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-300 font-mono text-sm break-all">
+            {redundancyConfig.clientPublicKey || "Client public key will appear here..."}
+          </div>
         </div>
 
         <div className="flex justify-end">

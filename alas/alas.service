@@ -1,0 +1,18 @@
+[Unit]
+Description=Alas Audio Recording Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/alas
+Restart=always
+RestartSec=5
+User=alas
+Group=alas
+WorkingDirectory=/var/lib/alas
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

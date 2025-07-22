@@ -9,7 +9,7 @@ use chrono::{ Utc as ChronoUtc, Duration as ChronoDuration };
 use rand::distr::Alphanumeric;
 use rand::Rng;
 use rocket::request::{FromRequest, Outcome};
-use alas_lib::config::{load_config_async, save_config, AlasAuthenticationConfig, AlasConfig};
+use alas_lib::config::{load_config_async, save_config, save_config_async, AlasAuthenticationConfig, AlasConfig};
 
 /// Structure for the incoming login request payload.
 #[derive(Deserialize)]
@@ -175,7 +175,7 @@ async fn change_password(request: Json<ChangePasswordRequest>) -> Result<Status,
 
     // Save updated config
     config.auth = Some(auth_config);
-    save_config(&config);
+    save_config_async(&config).await;
 
     Ok(Status::Ok)
 }
