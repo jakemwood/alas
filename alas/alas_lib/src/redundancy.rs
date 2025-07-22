@@ -12,8 +12,11 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::process::Command;
 use std::process::Command as StdCommand;
+use std::sync::Arc;
 use rocket::yansi::Paint;
+use tokio::sync::RwLock;
 use crate::config::{load_config_async, save_config_async, AlasConfig, AlasRedundancyConfig, RedundancyError};
+use crate::state::{AlasState, SafeState};
 
 // Web API structs that don't expose private keys
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -80,7 +83,7 @@ impl RedundancyManager {
     /// # Errors
     ///
     /// Returns an error if creating directories or writing default configurations fails.
-    pub async fn initialize(&self) -> Result<(), RedundancyError> {
+    pub async fn initialize(&self, alas_state: &SafeState) -> Result<(), RedundancyError> {
         info!("Initializing redundancy configuration");
 
         // Create directories if they don't exist
@@ -95,7 +98,7 @@ impl RedundancyManager {
             info!("Created default Engarde configuration");
         }
 
-        self.initialize_default_config().await?;
+        self.initialize_default_config(alas_state).await?;
 
         Ok(())
     }
@@ -137,14 +140,14 @@ impl RedundancyManager {
     }
 
     /// Initialize a default Alas redundancy configuration if none exists
-    pub async fn initialize_default_config(&self) -> Result<(), RedundancyError> {
-        let alas_config = load_config_async().await;
+    pub async fn initialize_default_config(&self, alas_state: &SafeState) -> Result<(), RedundancyError> {
+        let mut alas_write_state = alas_state.write().await;
+        let mut alas_config = (*alas_write_state).config.clone();
         
         if alas_config.redundancy.is_none() {
             let default_config = RedundancyManager::create_alas_redundancy_config_default();
-            let mut updated_config = alas_config;
-            updated_config.redundancy = Some(default_config);
-            save_config_async(&updated_config).await;
+            alas_config.redundancy = Some(default_config);
+            (*alas_write_state).update_config(alas_config);
             info!("Initialized default redundancy configuration with pre-generated client key");
         }
         

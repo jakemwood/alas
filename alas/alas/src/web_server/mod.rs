@@ -29,7 +29,7 @@ pub async fn run_rocket_server(
     tokio::spawn(async move {
         // Initialize RedundancyManager
         let redundancy_manager = RedundancyManager::new();
-        if let Err(e) = redundancy_manager.initialize().await {
+        if let Err(e) = redundancy_manager.initialize(&tokio_state).await {
             eprintln!("Failed to initialize redundancy manager: {}", e);
             // log::error!("Failed to initialize redundancy manager: {}", e);
         }

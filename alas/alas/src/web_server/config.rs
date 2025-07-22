@@ -45,6 +45,20 @@ struct SetCellularSettings {
     apn: String
 }
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct CellularConfig {
+    apn: String,
+}
+
+#[get("/cellular")]
+async fn get_cellular_config() -> Json<CellularConfig> {
+    let config = load_config_async().await;
+    Json(CellularConfig {
+        apn: config.cellular.apn,
+    })
+}
+
 #[post("/cellular", data = "<request>")]
 async fn set_cellular_config(request: Json<SetCellularSettings>) -> Status {
     connect_to_cellular(request.apn.clone()).await;
@@ -226,6 +240,8 @@ pub fn routes() -> Vec<Route> {
     routes![
         available_wifi,
         connect_to_wifi,
+        get_cellular_config,
+        set_cellular_config,
         get_icecast_config,
         set_icecast_config,
         get_audio_config,
