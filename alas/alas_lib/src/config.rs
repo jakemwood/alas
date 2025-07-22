@@ -53,14 +53,27 @@ pub struct AlasConfig {
     pub redundancy: Option<AlasRedundancyConfig>,
 }
 
+pub fn find_config_file() -> String {
+    // Start with current directory and look for config.json
+    // If it's there, return it.
+    // Otherwise, return /etc/alas/config.json
+
+    let current_dir_config = "./config.json";
+    if std::path::Path::new(current_dir_config).exists() {
+        current_dir_config.to_string()
+    } else {
+        "/etc/alas/config.json".to_string()
+    }
+}
+
 pub fn load_config() -> AlasConfig {
     // Load the configuration from JSON
-    let config_file = fs::File::open("config.json").expect("File should be open");
+    let config_file = fs::File::open(find_config_file()).expect("File should be open");
     serde_json::from_reader(config_file).expect("Could not load configuration file")
 }
 
 pub async fn load_config_async() -> AlasConfig {
-    let config_file =   tokio::fs::read("config.json").await.expect("File should be read");
+    let config_file =   tokio::fs::read(find_config_file()).await.expect("File should be read");
     serde_json::from_slice(&config_file).expect("Could not load configuration file")
 }
 
@@ -69,7 +82,7 @@ pub fn save_config(config: &AlasConfig) {
         ::to_string_pretty(config)
         .expect("Could not stringify config");
 
-    let mut config_file = fs::File::create("config.json").expect("File should be open");
+    let mut config_file = fs::File::create(find_config_file()).expect("File should be open");
     config_file.write(serialized_config.as_bytes()).expect("File should be write");
 }
 
@@ -77,7 +90,7 @@ pub async fn save_config_async(config: &AlasConfig) {
     let serialized_config = serde_json::to_string_pretty(config)
         .expect("Could not stringify config");
 
-    tokio::fs::write("config.json", &serialized_config).await.expect("File should be write");
+    tokio::fs::write(find_config_file(), &serialized_config).await.expect("File should be write");
 }
 
 #[derive(Error, Debug)]
