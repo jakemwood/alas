@@ -21,7 +21,7 @@ function useNetworks(isConnecting: boolean) {
       return;
     }
     console.log("loadwiFi: isCOnnecting is", isConnecting);
-    const results = await fetch("/wifi/available");
+    const results = await fetch("/config/wifi/available");
     const json = await results.json();
     setNetworks(json.networks);
     setIsLoading(false);
@@ -67,7 +67,7 @@ function App() {
     setShowLoadingScreen(true);
     setIsConnecting(true);
 
-    await fetch("/wifi/connect", {
+    await fetch("/config/wifi/connect", {
       method: "POST",
       body: JSON.stringify({
         ap: selectedNetwork.ap_path,
