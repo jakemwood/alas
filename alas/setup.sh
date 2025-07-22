@@ -62,8 +62,38 @@ ENGARDE_URL="https://engarde.linuxzogno.org/builds/master/linux/arm/engarde-clie
 sudo curl -L -o "$ENGARDE_BINARY" "$ENGARDE_URL"
 sudo chmod +x "$ENGARDE_BINARY"
 
-# Grant more netowrk permissions
-# TODO: make sure to set ./alas to the actual installed path
-#sudo setcap cap_net_admin+ep ./alas
+# Create alas folders
+sudo mkdir /etc/alas
+sudo mkdir /etc/alas/backups
 
-echo "Setup complete. Log out and log back in for group changes to take effect."
+# Setup the alas service
+sudo bash -c "cat > /etc/systemd/system/alas.service" <<'EOF'
+[Unit]
+Description=Alas Audio Recording Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/alas
+Restart=always
+RestartSec=5
+User=alas
+Group=alas
+WorkingDirectory=/etc/alas
+StandardOutput=journal
+StandardError=journal
+AmbientCapabilities=CAP_NET_ADMIN
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudop systemctl enable alas
+
+echo "Setup complete. Rebooting in 3 seconds..."
+
+sleep 3
+sudo reboot
+

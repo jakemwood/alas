@@ -69,8 +69,8 @@ impl RedundancyManager {
     pub fn new() -> Self {
         Self {
             wg_interface: "wg0".to_string(),
-            engarde_config_path: PathBuf::from("./engarde.yml"),
-            backup_dir: PathBuf::from("./backups"),
+            engarde_config_path: PathBuf::from("/etc/alas/engarde.yml"),
+            backup_dir: PathBuf::from("/etc/alas/backups"),
         }
     }
 
