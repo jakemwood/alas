@@ -7,22 +7,32 @@ export function Network() {
   const { networkConfig, setNetworkConfig } = useStore();
 
   useEffect(() => {
-    api.getNetworkStatus().then((results) => {
+    // Load network status and cellular config
+    Promise.all([
+      api.getNetworkStatus(),
+      api.getCellularConfig()
+    ]).then(([networkStatus, cellularConfig]) => {
       setNetworkConfig({
         ...networkConfig,
-        imei: results.imei,
+        imei: networkStatus.imei,
+        apn: { ...networkConfig.apn, name: cellularConfig.apn }
       });
     });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleWifiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.updateNetworkConfig(networkConfig);
+    await api.updateWifiConfig(networkConfig.wifi.ssid, networkConfig.wifi.password);
+  };
+
+  const handleCellularSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await api.updateCellularConfig(networkConfig.apn.name);
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <div className="max-w-2xl mx-auto space-y-8">
+      <form onSubmit={handleWifiSubmit}>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold mb-4">WiFi Configuration</h2>
           <div className="space-y-4">
@@ -59,8 +69,18 @@ export function Network() {
               />
             </div>
           </div>
+          <div className="flex justify-end mt-4">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Save WiFi
+            </button>
+          </div>
         </div>
+      </form>
 
+      <form onSubmit={handleCellularSubmit}>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold mb-4">APN Configuration</h2>
           <div className="space-y-4">
@@ -87,15 +107,14 @@ export function Network() {
               />
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Save Changes
-          </button>
+          <div className="flex justify-end mt-4">
+            <button
+              type="submit"
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              Save APN
+            </button>
+          </div>
         </div>
       </form>
     </div>

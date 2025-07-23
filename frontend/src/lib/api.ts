@@ -7,23 +7,32 @@ export function useApi() {
     Authorization: `Bearer ${authStore.jwt}`,
   };
   return {
-    async getNetworkConfig() {
-      const res = await fetch(`${API_BASE}/config/network`, { headers });
-      return res.json();
-    },
-
     async getNetworkStatus() {
       const res = await fetch(`${API_BASE}/status/network`, { headers });
       return res.json();
     },
 
-    async updateNetworkConfig(config: any) {
-      const res = await fetch(`${API_BASE}/config/network`, {
-        method: "PUT",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
+    async getCellularConfig() {
+      const res = await fetch(`${API_BASE}/config/cellular`, { headers });
       return res.json();
+    },
+
+    async updateCellularConfig(apn: string) {
+      const res = await fetch(`${API_BASE}/config/cellular`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ apn }),
+      });
+      return res.status === 200;
+    },
+
+    async updateWifiConfig(ssid: string, password: string) {
+      const res = await fetch(`${API_BASE}/config/wifi/connect`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ ap: ssid, password }),
+      });
+      return res.status === 201;
     },
 
     async getAudioStatus() {

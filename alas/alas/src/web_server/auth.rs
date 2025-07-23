@@ -128,10 +128,7 @@ async fn login(login_request: Json<LoginRequest>) -> Result<Json<JwtResponse>, S
         });
 
         // Save the password back to the config file
-        let serialized_config = serde_json
-        ::to_string_pretty(&config)
-            .map_err(|_| Status::InternalServerError)?;
-        fs::write("config.json", serialized_config).await.map_err(|_| Status::InternalServerError)?;
+        save_config_async(&config).await;
 
         // Assume a default password
         Ok(Json(JwtResponse { jwt: token }))

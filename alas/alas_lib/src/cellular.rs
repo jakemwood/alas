@@ -93,7 +93,7 @@ pub async fn connect_to_cellular(apn_name: String) {
     connection_settings.insert("type", Value::from("gsm"));
     connection_settings.insert("interface-name", Value::from(interface));
     connection_settings.insert("autoconnect", Value::from(true));
-    connection_settings.insert("ipv6.method", Value::from("disabled"));
+    // connection_settings.insert("ipv6.method", Value::from("disabled"));
 
     let mut settings = HashMap::new();
     settings.insert("connection", connection_settings);

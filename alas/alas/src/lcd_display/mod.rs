@@ -363,7 +363,8 @@ fn start_writer_thread(
                             break;
                         }
                         Ok(message) => {
-                            if !matches!(message, AlasMessage::VolumeChange { .. }) {
+                            if !matches!(message, AlasMessage::VolumeChange { .. }) &&
+                               !matches!(message, AlasMessage::CellularStatusChange { new_state: alas_lib::wifi::AlasWiFiState::Connected, .. }) {
                                 println!("📺✏️ Handling message... {:?}", message);
                             }
                             handle_message(

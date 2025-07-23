@@ -90,7 +90,7 @@ KillSignal=SIGINT
 WantedBy=multi-user.target
 EOF
 sudo systemctl daemon-reload
-sudop systemctl enable alas
+sudo systemctl enable alas
 
 echo "Setup complete. Rebooting in 3 seconds..."
 
