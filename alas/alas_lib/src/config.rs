@@ -56,18 +56,19 @@ pub struct AlasConfig {
 pub fn find_config_file() -> String {
     // Start with current directory and look for config.json
     // If it's there, return it.
-    // Otherwise, return /etc/alas/config.json
+    // Otherwise, return /var/lib/alas/config.json
 
     let current_dir_config = "./config.json";
     if std::path::Path::new(current_dir_config).exists() {
         current_dir_config.to_string()
     } else {
-        "/etc/alas/config.json".to_string()
+        "/var/lib/alas/config.json".to_string()
     }
 }
 
 pub fn load_config() -> AlasConfig {
     // Load the configuration from JSON
+    println!("Loading configuration from {}", find_config_file());
     let config_file = fs::File::open(find_config_file()).expect("File should be open");
     serde_json::from_reader(config_file).expect("Could not load configuration file")
 }

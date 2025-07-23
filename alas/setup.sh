@@ -63,8 +63,8 @@ sudo curl -L -o "$ENGARDE_BINARY" "$ENGARDE_URL"
 sudo chmod +x "$ENGARDE_BINARY"
 
 # Create alas folders
-sudo mkdir /etc/alas
-sudo mkdir /etc/alas/backups
+sudo mkdir /var/lib/alas
+sudo mkdir /var/lib/alas/backups
 
 # Setup the alas service
 sudo bash -c "cat > /etc/systemd/system/alas.service" <<'EOF'
@@ -80,17 +80,21 @@ Restart=always
 RestartSec=5
 User=alas
 Group=alas
-WorkingDirectory=/etc/alas
+WorkingDirectory=/var/lib/alas
 StandardOutput=journal
 StandardError=journal
 AmbientCapabilities=CAP_NET_ADMIN
 KillSignal=SIGINT
+StateDirectory=alas
 
 [Install]
 WantedBy=multi-user.target
 EOF
 sudo systemctl daemon-reload
 sudo systemctl enable alas
+
+# Add alas to the audio group
+sudo usermod -aG audio alas
 
 echo "Setup complete. Rebooting in 3 seconds..."
 
