@@ -78,6 +78,11 @@ async fn do_upload(file_path: String,
 
             // Get Dropbox access token
             let token = get_dropbox_access_token().await;
+            if token.is_err() {
+                println!("📦 No Dropbox token, exiting..");
+                return;
+            }
+
             println!("📦 Got token...");
             let client = UserAuthDefaultClient::new(
                 token.expect("Could not get Dropbox access token")

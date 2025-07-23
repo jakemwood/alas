@@ -85,7 +85,19 @@ pub async fn start(
         );
 
         let host = cpal::default_host();
-        let device = host.default_input_device().expect("No default sound card");
+
+        // host.input_devices().expect("No input devices").for_each(|device| {
+        //     let name = device.name().unwrap_or_else(|_| "Unknown".to_string());
+        //     println!("🔈 Found device: {}", name);
+        // });
+
+        let device = host.input_devices()
+            .expect("No input devices")
+            .find(|device| {
+                let name = device.name().unwrap_or_else(|_| "Unknown".to_string());
+                name.contains("PCM1863") && name.contains("plughw:")
+            })
+            .expect("No device found containing 'PCM1863'");
 
         let err_fn = move |err| {
             eprintln!("an error occurred on stream: {}", err);
@@ -342,7 +354,7 @@ fn make_mp3_samples<T>(mp3_encoder: &mut Encoder, input: &[T]) -> Vec<u8> where 
 }
 
 fn open_file_named_now() -> (File, String) {
-    let formatted_time = chrono::Local::now().format("%Y-%m-%dT%H%M%S.mp3").to_string();
+    let formatted_time = chrono::Local::now().format("/var/lib/alas/audio/%Y-%m-%dT%H%M%S.mp3").to_string();
     (File::create(&formatted_time).expect("to open file"), formatted_time)
 }
 

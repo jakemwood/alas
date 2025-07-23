@@ -1,16 +1,15 @@
 [Unit]
 Description=Engarde Client - VPN Bonding Service
-After=network.target wg-quick@wg0.service
-Wants=wg-quick@wg0.service
+After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/engarde-client /path/to/alas/engarde.yml
+ExecStart=/usr/local/bin/engarde-client /var/lib/alas/engarde.yml
 Restart=always
 RestartSec=5
 User=alas
 Group=alas
-WorkingDirectory=/path/to/alas
+WorkingDirectory=/var/lib/alas
 StandardOutput=journal
 StandardError=journal
 

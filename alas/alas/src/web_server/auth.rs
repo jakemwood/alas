@@ -61,7 +61,10 @@ impl<'r> FromRequest<'r> for Authenticated {
                     &Validation::new(Algorithm::HS256)
                 ) {
                     Ok(_) => Outcome::Success(Authenticated {}),
-                    Err(_) => Outcome::Error((Status::Unauthorized, ())),
+                    Err(e) => {
+                        eprintln!("Error decoding JWT: {}", e);
+                        Outcome::Error((Status::Unauthorized, ()))
+                    },
                 }
             }
         }
