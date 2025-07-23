@@ -44,3 +44,11 @@ export interface SystemStatus {
     connected: boolean;
   };
 }
+
+export interface AvailableNetwork {
+  ssid: string;
+  strength: number;
+  ap_path: string;
+  frequency: number;
+  security: string;
+}

@@ -60,9 +60,21 @@ async fn get_cellular_config() -> Json<CellularConfig> {
 }
 
 #[post("/cellular", data = "<request>")]
-async fn set_cellular_config(request: Json<SetCellularSettings>) -> Status {
+async fn set_cellular_config(
+    request: Json<SetCellularSettings>,
+    state: &State<SafeState>,
+    bus: &State<Sender<AlasMessage>>
+) -> Json<CellularConfig> {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.cellular.apn = request.apn.clone();
+    state.update_config(new_config);
+    
     connect_to_cellular(request.apn.clone()).await;
-    Status::Ok
+    
+    Json(CellularConfig {
+        apn: state.config.cellular.apn.clone(),
+    })
 }
 
 #[get("/icecast")]
