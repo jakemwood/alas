@@ -292,9 +292,13 @@ pub async fn start(
     shared_state: &SafeState
 ) -> JoinHandle<()> {
     let shared_state = shared_state.clone();
-    tokio::spawn(async move {
+    task::spawn_blocking(move || {
         println!("📺 Starting LCD thread...");
-        thread_start(bus, shared_state.clone()).await
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("Failed to create LCD runtime");
+        rt.block_on(thread_start(bus, shared_state.clone()))
     })
 }
 
