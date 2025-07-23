@@ -203,8 +203,10 @@ async fn get_dropbox_link(state: &State<SafeState>) -> Json<DropboxUrl> {
 #[post("/dropbox-link", format = "json", data = "<request>")]
 async fn post_dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState>) -> Status {
     let code = request.code.clone();
-    let mut state = state.write().await;
-    let mut new_config = (*state).config.clone();
+    let mut new_config = {
+        let state = state.read().await;
+        (*state).config.clone()
+    };
 
     let pkce = PkceCode { code: new_config.dropbox.clone().unwrap().pkce_verifier };
     let mut auth = Authorization::from_auth_code(
@@ -226,6 +228,7 @@ async fn post_dropbox_link(request: Json<DropboxConfig>, state: &State<SafeState
                 access_token: auth_saved,
 
             });
+            let mut state = state.write().await;
             state.update_config(new_config);
 
             Status::Ok
