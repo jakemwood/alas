@@ -26,11 +26,25 @@ export function useApi() {
       return res.status === 200;
     },
 
+    async getAvailableWifi() {
+      const res = await fetch(`${API_BASE}/config/wifi/available`, { headers });
+      return res.json();
+    },
+
     async updateWifiConfig(ssid: string, password: string) {
       const res = await fetch(`${API_BASE}/config/wifi/connect`, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ ap: ssid, password }),
+      });
+      return res.status === 201;
+    },
+
+    async connectToWifi(ap_path: string, password?: string) {
+      const res = await fetch(`${API_BASE}/config/wifi/connect`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ ap: ap_path, password }),
       });
       return res.status === 201;
     },

@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/engarde-client /var/lib/alas/engarde.yml
+ExecStart=/usr/bin/engarde-client /var/lib/alas/engarde.yml
 Restart=always
 RestartSec=5
 User=alas

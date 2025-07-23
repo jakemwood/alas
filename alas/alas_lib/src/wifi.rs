@@ -57,7 +57,7 @@ async fn get_wifi_device_as_device(conn: &Connection) -> DeviceProxy {
 async fn access_point_to_wifi_network(
     conn: &Connection,
     access_point_path: OwnedObjectPath
-) -> WiFiNetwork {
+) -> Result<WiFiNetwork, zbus::Error> {
     let app = AccessPointProxy::new(&conn, access_point_path.clone()).await.expect("No proxy");
     let ssid = String::from_utf8(app.ssid().await.expect("No ssid")).expect(
         "Could not convert SSID"
@@ -69,13 +69,13 @@ async fn access_point_to_wifi_network(
         "none"
     };
 
-    WiFiNetwork {
+    Ok(WiFiNetwork {
         ssid,
         strength: app.strength().await.expect("No strength"),
         ap_path: access_point_path.clone(),
         frequency: app.frequency().await.expect("No frequency"),
         security: String::from(security),
-    }
+    })
 }
 
 /// Given a list of paths to Access Points, load the data into a structure that we like
@@ -85,7 +85,9 @@ async fn load_access_points(
 ) -> Vec<WiFiNetwork> {
     let mut results: Vec<WiFiNetwork> = Vec::new();
     for access_point in all_access_points {
-        results.push(access_point_to_wifi_network(&conn, access_point).await);
+        if let Ok(network) = access_point_to_wifi_network(&conn, access_point).await {
+            results.push(network);
+        }
     }
     results
 }
@@ -327,7 +329,13 @@ impl WiFiObserver {
         let access_point = wifi_device.active_access_point().await;
         match access_point {
             Ok(access_point_path) => {
-                Some(access_point_to_wifi_network(&conn, access_point_path).await)
+                let network = access_point_to_wifi_network(&conn, access_point_path).await;
+                if network.is_ok() {
+                    Some(network.unwrap())
+                }
+                else {
+                    None
+                }
             }
             Err(_) => None,
         }

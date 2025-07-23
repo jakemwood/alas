@@ -46,6 +46,13 @@ pub async fn get_dropbox_access_token() -> Result<Authorization, String> {
 async fn do_upload(file_path: String,
                    destination_folder: String,
                    message_bus: Sender<AlasMessage>,) {
+    // Get Dropbox access token
+    let token = get_dropbox_access_token().await;
+    if token.is_err() {
+        println!("📦 No Dropbox token, exiting..");
+        return;
+    }
+
     // Extract filename from path
     let file_name = Path::new(&file_path)
         .file_name()
@@ -76,12 +83,6 @@ async fn do_upload(file_path: String,
             let file_size = content.len();
             let chunk_size = 1024 * 1024 * 10; // 10MB chunks
 
-            // Get Dropbox access token
-            let token = get_dropbox_access_token().await;
-            if token.is_err() {
-                println!("📦 No Dropbox token, exiting..");
-                return;
-            }
 
             println!("📦 Got token...");
             let client = UserAuthDefaultClient::new(
