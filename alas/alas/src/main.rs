@@ -22,7 +22,7 @@ async fn main() {
     // Initialize redundancy manager and WireGuard interface
     let redundancy_manager = redundancy::RedundancyManager::new();
     if let Err(e) = redundancy_manager.initialize().await {
-        eprintln!("Failed to initialize redundancy manager: {}", e);
+        eprintln!("Failed to initialize redundancy manager 2: {}", e);
     }
     
     // Initialize WireGuard interface on startup
