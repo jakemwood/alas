@@ -361,7 +361,11 @@ fn open_file_named_now() -> (File, String) {
 fn connect_to_icecast(state: &SafeState) -> ShoutConn {
     println!("Connection attempt!");
     loop {
-        let state = state.blocking_read();
+        let state_read_attempt = state.try_read();
+        if state_read_attempt.is_err() {
+            continue;
+        }
+        let state = state_read_attempt.unwrap().clone();
         let config = &state.config.icecast;
         println!("Connecting to {:} {:}", config.hostname, config.mount);
         let connection = shout::ShoutConnBuilder
