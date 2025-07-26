@@ -111,7 +111,7 @@ impl RedundancyManager {
                 listen_addr: "127.0.0.1:59401".to_string(),
                 dst_addr: "0.0.0.0:59501".to_string(), // Placeholder
                 write_timeout: 10,
-                excluded_interfaces: vec!["lo".to_string(), "tailscale0".to_string()],
+                excluded_interfaces: vec!["lo".to_string(), "tailscale0".to_string(), "wg0".to_string()],
                 web_manager: Some(EngardeWebManager {
                     listen_addr: "0.0.0.0:9001".to_string(),
                     username: "engarde".to_string(),
