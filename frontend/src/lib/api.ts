@@ -1,19 +1,32 @@
 import { useAuthStore } from "./auth-store";
+import { useNavigate } from "react-router-dom";
 
 export function useApi() {
   const authStore = useAuthStore();
+  const navigate = useNavigate();
   const API_BASE = `http://${authStore.ipAddress}`;
   const headers = {
     Authorization: `Bearer ${authStore.jwt}`,
   };
+
+  const handleAuthError = (response: Response) => {
+    if (response.status === 401 || response.status === 403) {
+      authStore.logout();
+      navigate("/login");
+      return true;
+    }
+    return false;
+  };
   return {
     async getNetworkStatus() {
       const res = await fetch(`${API_BASE}/status/network`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
     async getCellularConfig() {
       const res = await fetch(`${API_BASE}/config/cellular`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -23,11 +36,13 @@ export function useApi() {
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ apn }),
       });
+      if (handleAuthError(res)) return;
       return res.status === 200;
     },
 
     async getAvailableWifi() {
       const res = await fetch(`${API_BASE}/config/wifi/available`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -37,6 +52,7 @@ export function useApi() {
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ ap: ssid, password }),
       });
+      if (handleAuthError(res)) return;
       return res.status === 201;
     },
 
@@ -46,16 +62,19 @@ export function useApi() {
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ ap: ap_path, password }),
       });
+      if (handleAuthError(res)) return;
       return res.status === 201;
     },
 
     async getAudioStatus() {
       const res = await fetch(`${API_BASE}/status/audio`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
     async getAudioConfig() {
       const res = await fetch(`${API_BASE}/config/audio`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -65,11 +84,13 @@ export function useApi() {
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify(config),
       });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
     async getIcecastConfig() {
       const res = await fetch(`${API_BASE}/config/icecast`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -79,6 +100,7 @@ export function useApi() {
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify(config),
       });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -92,6 +114,7 @@ export function useApi() {
         }),
       });
 
+      if (handleAuthError(response)) return;
       if (!response.ok) {
         throw new Error("Failed to update password");
       }
@@ -102,11 +125,25 @@ export function useApi() {
       eventSource.onmessage = (event) => {
         callback(parseFloat(event.data));
       };
+      eventSource.onerror = () => {
+        // EventSource doesn't provide status codes, so we'll check if auth is still valid
+        fetch(`${API_BASE}/status/meter`, { headers })
+          .then(res => {
+            if (handleAuthError(res)) {
+              eventSource.close();
+            }
+          })
+          .catch(() => {
+            // Network error, close the connection
+            eventSource.close();
+          });
+      };
       return () => eventSource.close();
     },
 
     async getRedundancyConfig() {
       const res = await fetch(`${API_BASE}/config/redundancy`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -116,6 +153,7 @@ export function useApi() {
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify(config),
       });
+      if (handleAuthError(res)) return;
       return res.json();
     },
 
@@ -124,6 +162,7 @@ export function useApi() {
         method: "GET",
         headers: { "Content-Type": "application/json", ...headers },
       });
+      if (handleAuthError(res)) return;
       const reply = await res.json();
       return reply.url;
     },
@@ -134,11 +173,13 @@ export function useApi() {
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({ code }),
       });
+      if (handleAuthError(res)) return;
       return res.status == 201;
     },
 
     async getDropboxStatus() {
       const res = await fetch(`${API_BASE}/config/dropbox-status`, { headers });
+      if (handleAuthError(res)) return;
       return res.json();
     },
   };
