@@ -18,7 +18,7 @@ pub async fn send_webhook_notification(config: &AlasConfig, state: &str) {
             state: state.to_string(),
         };
         
-        // Spawn async task to avoid blocking the recording thread
+        // Spawn async task to avoid blocking any other threads
         spawn(async move {
             if let Err(e) = send_webhook_request(&url, payload).await {
                 eprintln!("Failed to send webhook notification: {}", e);
