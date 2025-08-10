@@ -22,15 +22,15 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get -y install pkg-config libssl-dev ca-certificates libasound2-dev libpulse-dev libdbus-1-dev portaudio19-dev libudev-dev libshout3-dev
 
-      - name: Install cross
-        run: cargo install cross --version 0.2.5
+      # - name: Install cross
+      #   run: cargo install cross --version 0.2.5
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build
         working-directory: alas
-        run: just build
+        run: cargo build
 
       - name: Run tests
         working-directory: alas
