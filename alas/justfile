@@ -1,5 +1,8 @@
 set dotenv-load
 
+cargo := if os() == "linux" { "cargo" } else { "cross" }
+target := if os() == "linux" { "" } else { "--target aarch64-unknown-linux-gnu" }
+
 [working-directory: 'frontend']
 @build-frontend:
     npm run build
@@ -9,13 +12,13 @@ set dotenv-load
     rsync -r dist/ ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}/static
 
 check:
-    cross check --target aarch64-unknown-linux-gnu
+    {{ cargo }} check {{ target }}
 
 build:
-    cross build --target aarch64-unknown-linux-gnu --release
+    {{ cargo }} build {{ target }}
 
 deploy:
     scp target/aarch64-unknown-linux-gnu/release/alas ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}
 
 test:
-    cross test --target aarch64-unknown-linux-gnu
+    {{ cargo }} test {{ target }}

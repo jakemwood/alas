@@ -30,8 +30,8 @@ jobs:
 
       - name: Build
         working-directory: alas
-        run: cargo build
+        run: just build
 
       - name: Run tests
         working-directory: alas
-        run: cargo test --verbose
+        run: just test --verbose
