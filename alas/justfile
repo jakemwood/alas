@@ -20,5 +20,5 @@ build:
 deploy:
     scp target/aarch64-unknown-linux-gnu/release/alas ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}
 
-test:
-    {{ cargo }} test {{ target }}
+test *args:
+    {{ cargo }} test {{ target }} {{ args }}
