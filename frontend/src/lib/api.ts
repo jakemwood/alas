@@ -182,5 +182,21 @@ export function useApi() {
       if (handleAuthError(res)) return;
       return res.json();
     },
+
+    async getWebhookConfig() {
+      const res = await fetch(`${API_BASE}/config/webhook`, { headers });
+      if (handleAuthError(res)) return;
+      return res.json();
+    },
+
+    async updateWebhookConfig(config: any) {
+      const res = await fetch(`${API_BASE}/config/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(config),
+      });
+      if (handleAuthError(res)) return;
+      return res.json();
+    },
   };
 }

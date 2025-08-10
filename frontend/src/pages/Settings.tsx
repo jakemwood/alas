@@ -15,6 +15,8 @@ export function Settings() {
   const [isDropboxLinked, setIsDropboxLinked] = useState(false);
   const [isDropboxLoading, setIsDropboxLoading] = useState(false);
   const [isDropboxStatusLoading, setIsDropboxStatusLoading] = useState(true);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [isWebhookLoading, setIsWebhookLoading] = useState(false);
   const api = useApi();
 
   useEffect(() => {
@@ -29,7 +31,17 @@ export function Settings() {
       }
     };
 
+    const fetchWebhookConfig = async () => {
+      try {
+        const config = await api.getWebhookConfig();
+        setWebhookUrl(config.url || "");
+      } catch (error) {
+        console.error("Failed to fetch webhook config:", error);
+      }
+    };
+
     fetchDropboxStatus();
+    fetchWebhookConfig();
   }, [api]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,6 +85,23 @@ export function Settings() {
       console.error("Failed to handle Dropbox link:", err);
     } finally {
       setIsDropboxLoading(false);
+    }
+  };
+
+  const handleWebhookSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsWebhookLoading(true);
+    setError("");
+
+    try {
+      await api.updateWebhookConfig({
+        url: webhookUrl.trim() || undefined,
+      });
+      setSuccess("Webhook settings updated successfully");
+    } catch (err) {
+      setError("Failed to update webhook settings");
+    } finally {
+      setIsWebhookLoading(false);
     }
   };
 
@@ -176,6 +205,43 @@ export function Settings() {
           )}
         </div>
       </div>
+
+      <form
+        onSubmit={handleWebhookSubmit}
+        className="bg-white p-6 rounded-lg shadow-md space-y-6"
+      >
+        <h2 className="text-lg font-semibold mb-4">Webhook Settings</h2>
+        <p className="text-gray-600 mb-4">
+          Configure a webhook URL to receive recording state notifications.
+          Leave empty to disable webhooks.
+        </p>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Webhook URL
+          </label>
+          <input
+            type="url"
+            placeholder="https://example.com/webhook"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            POST requests will be sent to this URL when recording starts and stops
+          </p>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={isWebhookLoading}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          >
+            {isWebhookLoading ? "Saving..." : "Save Webhook Settings"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

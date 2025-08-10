@@ -40,3 +40,6 @@ serde_yaml = "0.9.34+deprecated"
 
 # Silly to have to need this here
 rocket = { version = "0.5.1", features = ["json"] }
+
+# HTTP client for webhooks
+reqwest = { version = "0.12", features = ["json"] }

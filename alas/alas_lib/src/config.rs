@@ -43,6 +43,11 @@ pub struct AlasDropboxConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct AlasWebhookConfig {
+    pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AlasConfig {
     pub audio: AlasAudioConfig,
     pub icecast: AlasIcecastConfig,
@@ -51,6 +56,7 @@ pub struct AlasConfig {
     pub auth: Option<AlasAuthenticationConfig>,
     pub dropbox: Option<AlasDropboxConfig>,
     pub redundancy: Option<AlasRedundancyConfig>,
+    pub webhook: Option<AlasWebhookConfig>,
 }
 
 pub fn find_config_file() -> String {
