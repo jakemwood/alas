@@ -6,7 +6,7 @@ use defguard_wireguard_rs::{InterfaceConfiguration, Kernel, WGApi, WireguardInte
 use defguard_wireguard_rs::net::IpAddrMask;
 use defguard_wireguard_rs::key::Key;
 use defguard_wireguard_rs::host::Peer;
-use log::{error, info, warn};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::process::Command;
