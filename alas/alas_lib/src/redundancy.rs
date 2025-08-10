@@ -1,22 +1,17 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::{Path, PathBuf};
+use std::net::{SocketAddr};
+use std::path::{PathBuf};
 use std::str::FromStr;
 
 use defguard_wireguard_rs::{InterfaceConfiguration, Kernel, WGApi, WireguardInterfaceApi};
 use defguard_wireguard_rs::net::IpAddrMask;
 use defguard_wireguard_rs::key::Key;
 use defguard_wireguard_rs::host::Peer;
-use ipnet::IpNet;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::process::Command;
-use std::process::Command as StdCommand;
-use std::sync::Arc;
-use rocket::yansi::Paint;
-use tokio::sync::RwLock;
-use crate::config::{load_config_async, save_config_async, AlasConfig, AlasRedundancyConfig, RedundancyError};
-use crate::state::{AlasState, SafeState};
+use crate::config::{load_config_async, save_config_async, AlasRedundancyConfig, RedundancyError};
+use crate::state::{SafeState};
 
 // Web API structs that don't expose private keys
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -408,17 +403,17 @@ impl RedundancyManager {
     }
 }
 
-#[derive(Debug)]
-struct WireGuardInfo {
-    public_key: String,
-    private_key: String,
-}
+// #[derive(Debug)]
+// struct WireGuardInfo {
+//     public_key: String,
+//     private_key: String,
+// }
 
-#[derive(Debug)]
-struct EngardeInfo {
-    server_ip: String,
-    port: u16,
-}
+// #[derive(Debug)]
+// struct EngardeInfo {
+//     server_ip: String,
+//     port: u16,
+// }
 
 // Convert RedundancyError to Rocket Status for API responses
 impl From<RedundancyError> for rocket::http::Status {

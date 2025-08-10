@@ -3,14 +3,12 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::{ select, signal, time };
 use tokio::sync::broadcast::Sender;
-use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use zbus::Connection;
 use zbus::export::futures_util::StreamExt;
-use zbus::fdo::ObjectManagerProxy;
 use zbus::zvariant::{ ObjectPath, OwnedObjectPath, Value };
-use crate::modem_manager::{ ModemProxy, ModemSimpleProxy };
-use crate::network_manager::{ get_all_devices, DeviceProxy, NetworkManagerProxy, StateChangedArgs };
+use crate::modem_manager::{ ModemProxy };
+use crate::network_manager::{ get_all_devices, DeviceProxy, NetworkManagerProxy };
 use crate::state::{ AlasMessage, SafeState };
 use crate::wifi::AlasWiFiState;
 
@@ -33,10 +31,10 @@ async fn find_cell_device_path(conn: &Connection) -> Option<OwnedObjectPath> {
     None
 }
 
-async fn find_device(conn: &Connection) -> DeviceProxy {
-    let path = find_cell_device_path(&conn).await.expect("Could not find cell path");
-    DeviceProxy::new(&conn, path.clone()).await.expect("Could not connect to device")
-}
+// async fn find_device(conn: &Connection) -> DeviceProxy {
+//     let path = find_cell_device_path(&conn).await.expect("Could not find cell path");
+//     DeviceProxy::new(&conn, path.clone()).await.expect("Could not connect to device")
+// }
 
 async fn find_modem_device(conn: &Connection) -> Option<ModemProxy> {
     let path = list_modems().await.unwrap();
@@ -123,8 +121,6 @@ impl CellObserver {
     }
 
     pub async fn listen(self: Arc<Self>) -> JoinHandle<()> {
-        let cloned_self = self.clone();
-
         tokio::spawn(async move {
             println!("📲 Spawned cellular status listener");
 

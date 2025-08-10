@@ -257,7 +257,6 @@ impl WiFiObserver {
     }
 
     pub fn listen(self: Arc<Self>) -> JoinHandle<()> {
-        let sender = self.sender.clone();
         let cloned_self = self.clone();
 
         tokio::spawn(async move {

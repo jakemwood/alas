@@ -4,7 +4,6 @@ use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
 use alas_lib::state::SafeState;
 use rocket::futures::AsyncWriteExt;
-use rocket::yansi::Paint;
 use screen::Screen;
 use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
 use std::fmt::Display;
