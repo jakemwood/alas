@@ -39,13 +39,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build
-        working-directory: alas
-        run: just build
-
       - name: Run tests
         working-directory: alas
         run: just test --verbose
+
+      - name: Build
+        working-directory: alas
+        run: just build --release
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4

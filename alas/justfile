@@ -14,8 +14,8 @@ target := if os() == "linux" { "" } else { "--target aarch64-unknown-linux-gnu" 
 check:
     {{ cargo }} check {{ target }}
 
-build:
-    {{ cargo }} build {{ target }}
+build *args:
+    {{ cargo }} build {{ target }} {{ args }}
 
 deploy:
     scp target/aarch64-unknown-linux-gnu/release/alas ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}
