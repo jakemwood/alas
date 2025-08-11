@@ -14,11 +14,16 @@ jobs:
     runs-on: raspberry-pi
 
     steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: 1.82.0
+
       - name: Debug PATH
         run: |
           echo "USER=$USER HOME=$HOME"
           echo "PATH=$PATH"
           which cargo || true
+          rustc -Vv && cargo -V
 
       - name: Install just
         uses: taiki-e/install-action@v2
@@ -27,10 +32,6 @@ jobs:
 
       - name: Install dependencies
         run: sudo apt-get -y install pkg-config libssl-dev ca-certificates libasound2-dev libpulse-dev libdbus-1-dev portaudio19-dev libudev-dev libshout3-dev
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: 1.82.0
       # - name: Install cross
       #   run: cargo install cross --version 0.2.5
 
