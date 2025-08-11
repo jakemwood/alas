@@ -44,6 +44,8 @@ pub async fn run_rocket_server(
             ..Default::default()
         }).to_cors().expect("Could not start CORS");
 
+        println!("New version!");
+
         rocket::build()
             .manage(bus)
             .manage(tokio_state.clone())
