@@ -1,6 +1,5 @@
-use std::fmt::format;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait };
-use cpal::{BufferSize, Sample, StreamConfig, SupportedStreamConfig};
+use cpal::{BufferSize, Sample, StreamConfig};
 use mp3lame_encoder::{ DualPcm, Encoder, FlushNoGap };
 use shout::{ ShoutConn };
 use std::fs::File;
@@ -33,9 +32,8 @@ pub async fn start(
     let alas_state = alas_state.clone();
 
     task::spawn_blocking(move || {
-        let mut is_recording = false;
         let mut desire_to_broadcast = Arc::new(AtomicBool::new(false));
-        let mut config_reset = Arc::new(AtomicBool::new(false));
+        let config_reset = Arc::new(AtomicBool::new(false));
         let mut audio_last_seen = UNIX_EPOCH;
 
         let mut audio_bus = Bus::<Vec<f32>>::new(2204 * 30);

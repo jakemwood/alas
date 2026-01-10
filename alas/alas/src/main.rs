@@ -3,6 +3,7 @@ mod web_server;
 
 use alas_lib::state::AlasMessage;
 use alas_lib::state::AlasState;
+use alas_lib::webhook::start_webhook_listener;
 use alas_lib::wifi::{ WiFiObserver };
 use alas_lib::cellular::{ CellObserver };
 use alas_lib::redundancy;
@@ -40,6 +41,9 @@ async fn main() {
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state).await;
     println!("Audio results are: {:?}", audio);
+
+    // Start webhook listener
+    start_webhook_listener(event_bus.subscribe(), state.clone()).await;
 
     let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
 

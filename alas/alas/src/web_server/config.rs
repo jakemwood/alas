@@ -4,7 +4,7 @@ use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Sender;
 use alas_lib::cellular::connect_to_cellular;
-use alas_lib::config::{load_config_async, AlasAudioConfig, AlasDropboxConfig, AlasIcecastConfig};
+use alas_lib::config::{load_config_async, AlasAudioConfig, AlasDropboxConfig, AlasIcecastConfig, AlasWebhookConfig};
 use alas_lib::state::{AlasMessage, SafeState};
 use alas_lib::wifi::WiFiNetwork;
 use alas_lib::redundancy::{RedundancyManager, RedundancyWebRequest, RedundancyWebResponse};
@@ -251,6 +251,37 @@ async fn get_dropbox_status(state: &State<SafeState>) -> Json<DropboxStatus> {
     Json(DropboxStatus { is_connected })
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct WebhookConfig {
+    pub url: Option<String>,
+}
+
+#[get("/webhook")]
+async fn get_webhook_config() -> Json<WebhookConfig> {
+    let config = load_config_async().await;
+    Json(WebhookConfig {
+        url: config.webhook.map(|w| w.url),
+    })
+}
+
+#[post("/webhook", format = "json", data = "<request>")]
+async fn set_webhook_config(
+    request: Json<WebhookConfig>,
+    state: &State<SafeState>
+) -> Json<WebhookConfig> {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    
+    new_config.webhook = request.url.as_ref().map(|url| AlasWebhookConfig {
+        url: url.clone()
+    });
+    
+    state.update_config(new_config);
+    Json(WebhookConfig {
+        url: state.config.webhook.as_ref().map(|w| w.url.clone()),
+    })
+}
+
 pub fn routes() -> Vec<Route> {
     routes![
         available_wifi,
@@ -266,5 +297,7 @@ pub fn routes() -> Vec<Route> {
         post_dropbox_link,
         get_dropbox_link,
         get_dropbox_status,
+        get_webhook_config,
+        set_webhook_config,
     ]
 }

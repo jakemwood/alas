@@ -79,6 +79,7 @@ impl AlasState {
                 auth: None,
                 dropbox: None,
                 redundancy: None,
+                webhook: None,
             },
             upload_state: AlasUploadState {
                 state: AlasUploadStatus::Idle,

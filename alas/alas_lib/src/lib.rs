@@ -8,6 +8,7 @@ mod utils;
 pub mod wifi;
 pub mod cellular;
 pub mod redundancy;
+pub mod webhook;
 
 use crate::modem_manager::ModemSimpleProxy;
 use zbus::Connection;

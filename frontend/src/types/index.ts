@@ -30,6 +30,10 @@ export interface RedundancyConfig {
   serverPublicKey: string;
 }
 
+export interface WebhookConfig {
+  url?: string;
+}
+
 export interface SystemStatus {
   network: {
     wifiConnected: boolean;
