@@ -16,9 +16,9 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::{ select, signal };
 use uuid::Uuid;
-use zbus::export::futures_util::StreamExt;
 use zbus::zvariant::{ ObjectPath, OwnedObjectPath, Value };
 use zbus::Connection;
+use futures::stream::StreamExt;
 
 const ALAS_CONFIG_HOTSPOT_NAME: &str = "Alas Config";
 

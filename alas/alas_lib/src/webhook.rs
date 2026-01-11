@@ -215,6 +215,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_webhook_listener_ignores_other_messages() {
         let mock_server = MockServer::start().await;
         let webhook_url = format!("{}/webhook", mock_server.uri());

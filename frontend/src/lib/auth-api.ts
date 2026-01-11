@@ -2,7 +2,7 @@ import { AuthCredentials } from "../types/auth";
 
 export const authApi = {
   async login(credentials: AuthCredentials) {
-    const response = await fetch(`http://${credentials.ipAddress}/auth/login`, {
+    const response = await fetch(`//${credentials.ipAddress}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: credentials.password }),

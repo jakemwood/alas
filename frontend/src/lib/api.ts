@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 export function useApi() {
   const authStore = useAuthStore();
   const navigate = useNavigate();
-  const API_BASE = `http://${authStore.ipAddress}`;
+  const API_BASE = `//${authStore.ipAddress}`;
   const headers = {
     Authorization: `Bearer ${authStore.jwt}`,
   };
