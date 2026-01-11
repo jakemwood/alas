@@ -257,10 +257,10 @@ pub struct WebhookConfig {
 }
 
 #[get("/webhook")]
-async fn get_webhook_config() -> Json<WebhookConfig> {
-    let config = load_config_async().await;
+async fn get_webhook_config(state: &State<SafeState>) -> Json<WebhookConfig> {
+    let state = state.read().await;
     Json(WebhookConfig {
-        url: config.webhook.map(|w| w.url),
+        url: state.config.webhook.as_ref().map(|w| w.url.clone()),
     })
 }
 
@@ -300,4 +300,143 @@ pub fn routes() -> Vec<Route> {
         get_webhook_config,
         set_webhook_config,
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rocket::local::asynchronous::Client;
+    use rocket::http::{Status, ContentType};
+    use serde_json::json;
+    use alas_lib::state::AlasState;
+    use alas_lib::config::{AlasAudioConfig, AlasIcecastConfig, AlasCellularConfig, AlasWiFiConfig};
+    use tokio::sync::broadcast;
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+
+    fn create_test_state() -> SafeState {
+        Arc::new(RwLock::new(AlasState {
+            wifi_on: true,
+            cell_on: false,
+            cell_strength: 0,
+            is_streaming: false,
+            is_recording: false,
+            is_audio_present: false,
+            audio_last_seen: 0,
+            config: alas_lib::config::AlasConfig {
+                audio: AlasAudioConfig {
+                    silence_duration_before_deactivation: 15,
+                    silence_threshold: -55.0,
+                },
+                icecast: AlasIcecastConfig {
+                    hostname: "localhost".to_string(),
+                    port: 8000,
+                    mount: "/test.mp3".to_string(),
+                    password: "password".to_string(),
+                },
+                cellular: AlasCellularConfig {
+                    apn: "test".to_string(),
+                },
+                wifi: AlasWiFiConfig {
+                    name: "TestWiFi".to_string(),
+                    password: "password".to_string(),
+                },
+                auth: None,
+                dropbox: None,
+                redundancy: None,
+                webhook: None,
+            },
+            upload_state: alas_lib::state::AlasUploadState {
+                state: alas_lib::state::AlasUploadStatus::Idle,
+                progress: 0,
+                queue: Vec::new(),
+            },
+        }))
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_webhook_config_none() {
+        let state = create_test_state();
+        let (sender, _) = broadcast::channel::<AlasMessage>(10);
+        
+        let rocket = rocket::build()
+            .mount("/", routes![get_webhook_config])
+            .manage(state)
+            .manage(sender);
+            
+        let client = Client::tracked(rocket).await.expect("valid rocket instance");
+        let response = client.get("/webhook").dispatch().await;
+        
+        assert_eq!(response.status(), Status::Ok);
+        let webhook_config: WebhookConfig = response.into_json().await.expect("valid json");
+        assert!(webhook_config.url.is_none());
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_set_webhook_config() {
+        let state = create_test_state();
+        let (sender, _) = broadcast::channel::<AlasMessage>(10);
+        
+        let rocket = rocket::build()
+            .mount("/", routes![set_webhook_config])
+            .manage(state.clone())
+            .manage(sender);
+            
+        let client = Client::tracked(rocket).await.expect("valid rocket instance");
+        
+        let webhook_request = json!({
+            "url": "https://example.com/webhook"
+        });
+        
+        let response = client
+            .post("/webhook")
+            .header(ContentType::JSON)
+            .body(webhook_request.to_string())
+            .dispatch()
+            .await;
+        
+        assert_eq!(response.status(), Status::Ok);
+        let webhook_config: WebhookConfig = response.into_json().await.expect("valid json");
+        assert_eq!(webhook_config.url, Some("https://example.com/webhook".to_string()));
+        
+        // Verify the state was updated
+        let current_state = state.read().await;
+        assert!(current_state.config.webhook.is_some());
+        assert_eq!(current_state.config.webhook.as_ref().unwrap().url, "https://example.com/webhook");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_set_webhook_config_empty_url() {
+        let state = create_test_state();
+        let (sender, _) = broadcast::channel::<AlasMessage>(10);
+        
+        let rocket = rocket::build()
+            .mount("/", routes![set_webhook_config])
+            .manage(state.clone())
+            .manage(sender);
+            
+        let client = Client::tracked(rocket).await.expect("valid rocket instance");
+        
+        let webhook_request = json!({
+            "url": null
+        });
+        
+        let response = client
+            .post("/webhook")
+            .header(ContentType::JSON)
+            .body(webhook_request.to_string())
+            .dispatch()
+            .await;
+        
+        assert_eq!(response.status(), Status::Ok);
+        let webhook_config: WebhookConfig = response.into_json().await.expect("valid json");
+        assert!(webhook_config.url.is_none());
+        
+        // Verify the webhook config was set to None
+        let current_state = state.read().await;
+        assert!(current_state.config.webhook.is_none());
+    }
 }

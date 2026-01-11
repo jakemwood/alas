@@ -5,12 +5,12 @@ use tokio::{ select, signal, time };
 use tokio::sync::broadcast::Sender;
 use tokio::task::JoinHandle;
 use zbus::Connection;
-use zbus::export::futures_util::StreamExt;
 use zbus::zvariant::{ ObjectPath, OwnedObjectPath, Value };
-use crate::modem_manager::{ ModemProxy };
+use crate::modem_manager::{ ModemProxy, StateChangedArgs };
 use crate::network_manager::{ get_all_devices, DeviceProxy, NetworkManagerProxy };
 use crate::state::{ AlasMessage, SafeState };
 use crate::wifi::AlasWiFiState;
+use futures::stream::StreamExt;
 
 async fn find_cell_device_path(conn: &Connection) -> Option<OwnedObjectPath> {
     const MODEM: u32 = 8;
