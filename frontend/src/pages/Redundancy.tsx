@@ -1,20 +1,36 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useStore } from "../lib/store";
 import { useApi } from "../lib/api";
+import { EmptyState } from "../components/EmptyState";
 
 export function Redundancy() {
   const { redundancyConfig, setRedundancyConfig } = useStore();
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const api = useApi();
 
   useEffect(() => {
-    api.getRedundancyConfig().then((response) => {
-      setRedundancyConfig({
-        serverIp: response.server_ip,
-        port: response.port,
-        serverPublicKey: response.server_public_key,
-        clientPublicKey: response.client_public_key,
-      });
-    });
+    api
+      .getRedundancyConfig()
+      .then((response) => {
+        setRedundancyConfig({
+          serverIp: response.server_ip,
+          port: response.port,
+          serverPublicKey: response.server_public_key,
+          clientPublicKey: response.client_public_key,
+        });
+        setIsConfigured(true);
+        setShowForm(true);
+      })
+      .catch((error) => {
+        if (error?.status === 404) {
+          setIsConfigured(false);
+        } else {
+          console.error("Failed to fetch redundancy config:", error);
+        }
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,7 +40,39 @@ export function Redundancy() {
       port: redundancyConfig.port,
       server_public_key: redundancyConfig.serverPublicKey,
     });
+    setIsConfigured(true);
   };
+
+  const handleDelete = async () => {
+    if (confirm("Are you sure you want to disable redundancy?")) {
+      await api.deleteRedundancyConfig();
+      setIsConfigured(false);
+      setShowForm(false);
+      setRedundancyConfig({
+        serverIp: "",
+        port: 59501,
+        serverPublicKey: "",
+        clientPublicKey: "",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return <div className="max-w-2xl mx-auto text-center py-12">Loading...</div>;
+  }
+
+  if (!isConfigured && !showForm) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <EmptyState
+          title="Redundancy Not Configured"
+          description="Configure redundant network connectivity using WireGuard VPN and Engarde for multi-path networking."
+          actionLabel="Set Up Redundancy"
+          onAction={() => setShowForm(true)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -32,7 +80,18 @@ export function Redundancy() {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-lg shadow-md space-y-6"
       >
-        <h2 className="text-lg font-semibold mb-4">Redundancy Configuration</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Redundancy Configuration</h2>
+          {isConfigured && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="text-red-600 hover:text-red-800 text-sm"
+            >
+              Disable Redundancy
+            </button>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">

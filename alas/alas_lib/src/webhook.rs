@@ -99,21 +99,22 @@ mod tests {
                 silence_duration_before_deactivation: 15,
                 silence_threshold: -55.0,
             },
-            icecast: AlasIcecastConfig {
+            icecast: Some(AlasIcecastConfig {
                 hostname: "localhost".to_string(),
                 port: 8000,
                 mount: "/test.mp3".to_string(),
                 password: "password".to_string(),
-            },
-            cellular: AlasCellularConfig {
+            }),
+            cellular: Some(AlasCellularConfig {
                 apn: "test".to_string(),
-            },
-            wifi: AlasWiFiConfig {
+            }),
+            wifi: Some(AlasWiFiConfig {
                 name: "TestWiFi".to_string(),
                 password: "password".to_string(),
-            },
+            }),
             auth: None,
             dropbox: None,
+            recording: None,
             redundancy: None,
             webhook: webhook_url.map(|url| AlasWebhookConfig { url }),
         }
@@ -272,21 +273,22 @@ mod tests {
                 silence_duration_before_deactivation: 15,
                 silence_threshold: -55.0,
             },
-            icecast: AlasIcecastConfig {
+            icecast: Some(AlasIcecastConfig {
                 hostname: "localhost".to_string(),
                 port: 8000,
                 mount: "/test.mp3".to_string(),
                 password: "password".to_string(),
-            },
-            cellular: AlasCellularConfig {
+            }),
+            cellular: Some(AlasCellularConfig {
                 apn: "test".to_string(),
-            },
-            wifi: AlasWiFiConfig {
+            }),
+            wifi: Some(AlasWiFiConfig {
                 name: "TestWiFi".to_string(),
                 password: "password".to_string(),
-            },
+            }),
             auth: None,
             dropbox: None,
+            recording: None,
             redundancy: None,
             webhook: Some(webhook_config),
         };
