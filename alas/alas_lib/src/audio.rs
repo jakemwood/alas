@@ -18,6 +18,13 @@ use tokio::{ select, task };
 use tokio::sync::RwLock;
 use crate::dropbox::upload_file_to_dropbox;
 
+#[derive(Debug)]
+pub struct AudioThreads {
+    pub config_thread: JoinHandle<()>,
+    pub icecast: Option<JoinHandle<&'static str>>,
+    pub recording: Option<JoinHandle<&'static str>>,
+}
+
 /// Starts the thread for handling audio.
 ///
 /// This closure will hold the state for all things related to audio, including
@@ -27,7 +34,7 @@ use crate::dropbox::upload_file_to_dropbox;
 pub async fn start(
     bus: Sender<AlasMessage>,
     alas_state: &SafeState
-) -> JoinHandle<(JoinHandle<()>, JoinHandle<&'static str>, JoinHandle<&'static str>)> {
+) -> JoinHandle<AudioThreads> {
     let handler = Handle::current();
     let alas_state = alas_state.clone();
 
@@ -36,7 +43,16 @@ pub async fn start(
         let config_reset = Arc::new(AtomicBool::new(false));
         let mut audio_last_seen = UNIX_EPOCH;
 
-        let mut audio_bus = Bus::<Vec<f32>>::new(2204 * 30);
+        // Check which services are enabled
+        let enabled = alas_state.blocking_read().config.enabled_services();
+        let num_consumers = (enabled.recording as usize) + (enabled.streaming as usize);
+
+        let mut audio_bus = if num_consumers > 0 {
+            Some(Bus::<Vec<f32>>::new(2204 * 30))
+        } else {
+            println!("ℹ️  No audio consumers configured, audio processing disabled");
+            None
+        };
 
         // Config watch
         let mut subscriber = bus.subscribe();
@@ -64,23 +80,41 @@ pub async fn start(
             println!("✅ Exited config thread");
         });
 
-        // Icecast streaming thread
-        let icecast_rx = audio_bus.add_rx();
-        let icecast = start_icecast_thread(
-            icecast_rx,
-            desire_to_broadcast.clone(),
-            alas_state.clone(),
-            bus.clone(),
-            config_reset.clone()
-        );
-        //
-        // // File saving thread
-        let file_rx = audio_bus.add_rx();
-        let record = start_file_save_thread(
-            file_rx,
-            desire_to_broadcast.clone(),
-            bus.clone()
-        );
+        // Conditionally spawn Icecast streaming thread
+        let icecast = if enabled.streaming {
+            if let Some(ref mut audio_bus_ref) = audio_bus {
+                let icecast_rx = audio_bus_ref.add_rx();
+                Some(start_icecast_thread(
+                    icecast_rx,
+                    desire_to_broadcast.clone(),
+                    alas_state.clone(),
+                    bus.clone(),
+                    config_reset.clone()
+                ))
+            } else {
+                None
+            }
+        } else {
+            println!("ℹ️  Icecast not configured, streaming disabled");
+            None
+        };
+
+        // Conditionally spawn file saving thread
+        let record = if enabled.recording {
+            if let Some(ref mut audio_bus_ref) = audio_bus {
+                let file_rx = audio_bus_ref.add_rx();
+                Some(start_file_save_thread(
+                    file_rx,
+                    desire_to_broadcast.clone(),
+                    bus.clone()
+                ))
+            } else {
+                None
+            }
+        } else {
+            println!("ℹ️  Recording not configured, recording disabled");
+            None
+        };
 
         let host = cpal::default_host();
 
@@ -118,7 +152,7 @@ pub async fn start(
                         &alas_state,
                         &mut desire_to_broadcast,
                         &mut audio_last_seen,
-                        &mut audio_bus
+                        audio_bus.as_mut()
                     )
                 },
                 err_fn,
@@ -154,7 +188,11 @@ pub async fn start(
         });
         println!("Received exit message in audio thread...");
 
-        (config_thread, icecast, record)
+        AudioThreads {
+            config_thread,
+            icecast,
+            recording: record,
+        }
     })
 }
 
@@ -258,7 +296,13 @@ fn start_icecast_thread(
             };
 
             if desire_to_broadcast.load(Ordering::Relaxed) {
-                let icecast_connection = connect_to_icecast(&state);
+                let icecast_connection = match connect_to_icecast(&state) {
+                    Some(conn) => conn,
+                    None => {
+                        println!("ℹ️  Cannot connect to Icecast, config not available");
+                        break;
+                    }
+                };
                 config_reset.store(false, Ordering::Relaxed);
 
                 while
@@ -356,7 +400,7 @@ fn open_file_named_now() -> (File, String) {
     (File::create(&formatted_time).expect("to open file"), formatted_time)
 }
 
-fn connect_to_icecast(state: &SafeState) -> ShoutConn {
+fn connect_to_icecast(state: &SafeState) -> Option<ShoutConn> {
     println!("Connection attempt!");
     loop {
         let state_read_attempt = state.try_read();
@@ -364,7 +408,16 @@ fn connect_to_icecast(state: &SafeState) -> ShoutConn {
             continue;
         }
         let state = state_read_attempt.unwrap().clone();
-        let config = &state.config.icecast;
+
+        // Check if icecast config exists
+        let config = match &state.config.icecast {
+            Some(cfg) => cfg,
+            None => {
+                println!("ℹ️  Icecast config not found, cannot connect");
+                return None;
+            }
+        };
+
         println!("Connecting to {:} {:}", config.hostname, config.mount);
         let connection = shout::ShoutConnBuilder
             ::new()
@@ -377,7 +430,7 @@ fn connect_to_icecast(state: &SafeState) -> ShoutConn {
             .format(shout::ShoutFormat::MP3)
             .build();
         if let Ok(connection) = connection {
-            return connection;
+            return Some(connection);
         } else {
             // Sleep for 3 seconds and try re-connecting
             println!("Sleeping for 3 seconds and then re-trying our connection");
@@ -401,7 +454,7 @@ fn handle_samples<T>(
     state: &SafeState,
     desire_to_broadcast: &AtomicBool,
     audio_last_seen: &mut SystemTime,
-    sender: &mut Bus<Vec<T>>
+    sender: Option<&mut Bus<Vec<T>>>
 )
     where T: Sample
 {
@@ -442,7 +495,10 @@ fn handle_samples<T>(
         }
     }
 
-    sender.broadcast(input.to_vec().clone());
+    // Only broadcast to audio bus if it exists (i.e., if we have consumers)
+    if let Some(sender) = sender {
+        sender.broadcast(input.to_vec().clone());
+    }
 }
 
 fn calculate_rms_levels<T>(data: &[T], channels: usize) -> (f32, f32) where T: cpal::Sample {

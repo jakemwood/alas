@@ -1,10 +1,10 @@
-use rocket::{get, post, routes, Route, State};
+use rocket::{delete, get, post, routes, Route, State};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Sender;
 use alas_lib::cellular::connect_to_cellular;
-use alas_lib::config::{load_config_async, AlasAudioConfig, AlasDropboxConfig, AlasIcecastConfig, AlasWebhookConfig};
+use alas_lib::config::{load_config_async, AlasAudioConfig, AlasDropboxConfig, AlasIcecastConfig, AlasRecordingConfig, AlasWebhookConfig, AlasCellularConfig, AlasWiFiConfig};
 use alas_lib::state::{AlasMessage, SafeState};
 use alas_lib::wifi::WiFiNetwork;
 use alas_lib::redundancy::{RedundancyManager, RedundancyWebRequest, RedundancyWebResponse};
@@ -52,11 +52,14 @@ struct CellularConfig {
 }
 
 #[get("/cellular")]
-async fn get_cellular_config() -> Json<CellularConfig> {
+async fn get_cellular_config() -> Result<Json<CellularConfig>, Status> {
     let config = load_config_async().await;
-    Json(CellularConfig {
-        apn: config.cellular.apn,
-    })
+    match config.cellular {
+        Some(cellular) => Ok(Json(CellularConfig {
+            apn: cellular.apn,
+        })),
+        None => Err(Status::NotFound)
+    }
 }
 
 #[post("/cellular", data = "<request>")]
@@ -67,20 +70,22 @@ async fn set_cellular_config(
 ) -> Json<CellularConfig> {
     let mut state = state.write().await;
     let mut new_config = (*state).config.clone();
-    new_config.cellular.apn = request.apn.clone();
+    new_config.cellular = Some(AlasCellularConfig {
+        apn: request.apn.clone(),
+    });
     state.update_config(new_config);
-    
+
     connect_to_cellular(request.apn.clone()).await;
-    
+
     Json(CellularConfig {
-        apn: state.config.cellular.apn.clone(),
+        apn: state.config.cellular.as_ref().unwrap().apn.clone(),
     })
 }
 
 #[get("/icecast")]
-async fn get_icecast_config() -> Json<AlasIcecastConfig> {
+async fn get_icecast_config() -> Result<Json<AlasIcecastConfig>, Status> {
     let config = load_config_async().await;
-    Json(config.icecast)
+    config.icecast.map(Json).ok_or(Status::NotFound)
 }
 
 #[post("/icecast", format = "json", data = "<request>")]
@@ -91,10 +96,68 @@ async fn set_icecast_config(
 ) -> Json<AlasIcecastConfig> {
     let mut state = state.write().await;
     let mut new_config = (*state).config.clone();
-    new_config.icecast = request.into_inner();
+    new_config.icecast = Some(request.into_inner());
     state.update_config(new_config);
     let _ = bus.send(AlasMessage::StreamingConfigUpdated);
-    Json(state.config.icecast.clone())
+    Json(state.config.icecast.clone().unwrap())
+}
+
+#[delete("/icecast")]
+async fn delete_icecast_config(
+    bus: &State<Sender<AlasMessage>>,
+    state: &State<SafeState>
+) -> Status {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.icecast = None;
+    state.update_config(new_config);
+    let _ = bus.send(AlasMessage::StreamingConfigUpdated);
+    Status::NoContent
+}
+
+#[get("/recording")]
+async fn get_recording_config() -> Result<Json<AlasRecordingConfig>, Status> {
+    let config = load_config_async().await;
+    config.recording.map(Json).ok_or(Status::NotFound)
+}
+
+#[post("/recording", format = "json", data = "<request>")]
+async fn set_recording_config(
+    request: Json<AlasRecordingConfig>,
+    state: &State<SafeState>
+) -> Json<AlasRecordingConfig> {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.recording = Some(request.into_inner());
+    state.update_config(new_config);
+    Json(state.config.recording.clone().unwrap())
+}
+
+#[delete("/recording")]
+async fn delete_recording_config(state: &State<SafeState>) -> Status {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.recording = None;
+    state.update_config(new_config);
+    Status::NoContent
+}
+
+#[delete("/cellular")]
+async fn delete_cellular_config(state: &State<SafeState>) -> Status {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.cellular = None;
+    state.update_config(new_config);
+    Status::NoContent
+}
+
+#[delete("/wifi")]
+async fn delete_wifi_config(state: &State<SafeState>) -> Status {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.wifi = None;
+    state.update_config(new_config);
+    Status::NoContent
 }
 
 #[derive(Serialize)]
@@ -124,7 +187,16 @@ async fn connect_to_wifi(data: Json<WiFiConnectRequest>) -> Status {
 }
 
 #[get("/redundancy")]
-async fn get_redundancy_config(redundancy_manager: &State<Arc<Mutex<RedundancyManager>>>) -> Result<Json<RedundancyWebResponse>, Status> {
+async fn get_redundancy_config(
+    redundancy_manager: &State<Arc<Mutex<RedundancyManager>>>,
+    state: &State<SafeState>
+) -> Result<Json<RedundancyWebResponse>, Status> {
+    // Check if redundancy is configured in state first
+    let config_exists = state.read().await.config.redundancy.is_some();
+    if !config_exists {
+        return Err(Status::NotFound);
+    }
+
     let manager = redundancy_manager.lock().await;
     match manager.get_web_config().await {
         Ok(config) => Ok(Json(config)),
@@ -154,6 +226,15 @@ async fn set_redundancy_config(
             Status::from(e)
         }
     }
+}
+
+#[delete("/redundancy")]
+async fn delete_redundancy_config(state: &State<SafeState>) -> Status {
+    let mut state = state.write().await;
+    let mut new_config = (*state).config.clone();
+    new_config.redundancy = None;
+    state.update_config(new_config);
+    Status::NoContent
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -288,12 +369,19 @@ pub fn routes() -> Vec<Route> {
         connect_to_wifi,
         get_cellular_config,
         set_cellular_config,
+        delete_cellular_config,
         get_icecast_config,
         set_icecast_config,
+        delete_icecast_config,
+        get_recording_config,
+        set_recording_config,
+        delete_recording_config,
+        delete_wifi_config,
         get_audio_config,
         set_audio_config,
         get_redundancy_config,
         set_redundancy_config,
+        delete_redundancy_config,
         post_dropbox_link,
         get_dropbox_link,
         get_dropbox_status,
@@ -328,19 +416,20 @@ mod tests {
                     silence_duration_before_deactivation: 15,
                     silence_threshold: -55.0,
                 },
-                icecast: AlasIcecastConfig {
+                icecast: Some(AlasIcecastConfig {
                     hostname: "localhost".to_string(),
                     port: 8000,
                     mount: "/test.mp3".to_string(),
                     password: "password".to_string(),
-                },
-                cellular: AlasCellularConfig {
+                }),
+                cellular: Some(AlasCellularConfig {
                     apn: "test".to_string(),
-                },
-                wifi: AlasWiFiConfig {
+                }),
+                wifi: Some(AlasWiFiConfig {
                     name: "TestWiFi".to_string(),
                     password: "password".to_string(),
-                },
+                }),
+                recording: None,
                 auth: None,
                 dropbox: None,
                 redundancy: None,
