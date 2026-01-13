@@ -48,15 +48,54 @@ pub struct AlasWebhookConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct AlasRecordingConfig {
+    pub storage_path: String,
+    pub bitrate: u32,
+    pub format: String,
+}
+
+impl Default for AlasRecordingConfig {
+    fn default() -> Self {
+        Self {
+            storage_path: "/var/lib/alas/audio/".to_string(),
+            bitrate: 320,
+            format: "mp3".to_string(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AlasConfig {
     pub audio: AlasAudioConfig,
-    pub icecast: AlasIcecastConfig,
-    pub cellular: AlasCellularConfig,
-    pub wifi: AlasWiFiConfig,
+    pub icecast: Option<AlasIcecastConfig>,
+    pub cellular: Option<AlasCellularConfig>,
+    pub wifi: Option<AlasWiFiConfig>,
+    pub recording: Option<AlasRecordingConfig>,
     pub auth: Option<AlasAuthenticationConfig>,
     pub dropbox: Option<AlasDropboxConfig>,
     pub redundancy: Option<AlasRedundancyConfig>,
     pub webhook: Option<AlasWebhookConfig>,
+}
+
+pub struct EnabledServices {
+    pub recording: bool,
+    pub streaming: bool,
+    pub redundancy: bool,
+    pub cellular: bool,
+    pub wifi: bool,
+}
+
+impl AlasConfig {
+    /// Returns which services are enabled based on config presence
+    pub fn enabled_services(&self) -> EnabledServices {
+        EnabledServices {
+            recording: self.recording.is_some(),
+            streaming: self.icecast.is_some(),
+            redundancy: self.redundancy.is_some(),
+            cellular: self.cellular.is_some(),
+            wifi: self.wifi.is_some(),
+        }
+    }
 }
 
 pub fn find_config_file() -> String {

@@ -91,6 +91,9 @@ export function useApi() {
     async getIcecastConfig() {
       const res = await fetch(`${API_BASE}/config/icecast`, { headers });
       if (handleAuthError(res)) return;
+      if (res.status === 404) {
+        throw { status: 404, message: "Not configured" };
+      }
       return res.json();
     },
 
@@ -102,6 +105,15 @@ export function useApi() {
       });
       if (handleAuthError(res)) return;
       return res.json();
+    },
+
+    async deleteIcecastConfig() {
+      const res = await fetch(`${API_BASE}/config/icecast`, {
+        method: "DELETE",
+        headers,
+      });
+      if (handleAuthError(res)) return;
+      return res.status === 204;
     },
 
     async updatePassword(currentPassword: string, newPassword: string) {
@@ -144,6 +156,9 @@ export function useApi() {
     async getRedundancyConfig() {
       const res = await fetch(`${API_BASE}/config/redundancy`, { headers });
       if (handleAuthError(res)) return;
+      if (res.status === 404) {
+        throw { status: 404, message: "Not configured" };
+      }
       return res.json();
     },
 
@@ -155,6 +170,15 @@ export function useApi() {
       });
       if (handleAuthError(res)) return;
       return res.json();
+    },
+
+    async deleteRedundancyConfig() {
+      const res = await fetch(`${API_BASE}/config/redundancy`, {
+        method: "DELETE",
+        headers,
+      });
+      if (handleAuthError(res)) return;
+      return res.status === 204;
     },
 
     async getDropboxLink() {
@@ -197,6 +221,52 @@ export function useApi() {
       });
       if (handleAuthError(res)) return;
       return res.json();
+    },
+
+    async getRecordingConfig() {
+      const res = await fetch(`${API_BASE}/config/recording`, { headers });
+      if (handleAuthError(res)) return;
+      if (res.status === 404) {
+        throw { status: 404, message: "Not configured" };
+      }
+      return res.json();
+    },
+
+    async updateRecordingConfig(config: any) {
+      const res = await fetch(`${API_BASE}/config/recording`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(config),
+      });
+      if (handleAuthError(res)) return;
+      return res.json();
+    },
+
+    async deleteRecordingConfig() {
+      const res = await fetch(`${API_BASE}/config/recording`, {
+        method: "DELETE",
+        headers,
+      });
+      if (handleAuthError(res)) return;
+      return res.status === 204;
+    },
+
+    async deleteCellularConfig() {
+      const res = await fetch(`${API_BASE}/config/cellular`, {
+        method: "DELETE",
+        headers,
+      });
+      if (handleAuthError(res)) return;
+      return res.status === 204;
+    },
+
+    async deleteWifiConfig() {
+      const res = await fetch(`${API_BASE}/config/wifi`, {
+        method: "DELETE",
+        headers,
+      });
+      if (handleAuthError(res)) return;
+      return res.status === 204;
     },
   };
 }

@@ -63,19 +63,20 @@ impl AlasState {
                     silence_duration_before_deactivation: 15,
                     silence_threshold: -55.0,
                 },
-                icecast: AlasIcecastConfig {
+                icecast: Some(AlasIcecastConfig {
                     hostname: "localhost".to_string(),
                     port: 8000,
                     mount: "/hello.mp3".to_string(),
                     password: "password".to_string(),
-                },
-                cellular: AlasCellularConfig {
+                }),
+                cellular: Some(AlasCellularConfig {
                     apn: "broadband".to_string(),
-                },
-                wifi: AlasWiFiConfig {
+                }),
+                wifi: Some(AlasWiFiConfig {
                     name: "My WiFi".to_string(),
                     password: "password".to_string(),
-                },
+                }),
+                recording: None,
                 auth: None,
                 dropbox: None,
                 redundancy: None,

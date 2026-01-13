@@ -20,24 +20,40 @@ async fn main() {
     let state = Arc::new(RwLock::new(AlasState::new()));
     let (event_bus, _) = broadcast::channel::<AlasMessage>(256);
 
-    // Initialize redundancy manager and WireGuard interface
-    let redundancy_manager = redundancy::RedundancyManager::new();
-    if let Err(e) = redundancy_manager.initialize(&state).await {
-        eprintln!("Failed to initialize redundancy manager 2: {}", e);
-    }
-    
-    // Initialize WireGuard interface on startup
-    if let Err(e) = redundancy_manager.start_wireguard_interface().await {
-        eprintln!("Failed to initialize WireGuard interface: {}", e);
-    }
+    // Conditionally initialize redundancy manager and WireGuard interface
+    let _redundancy_manager = if state.read().await.config.redundancy.is_some() {
+        let manager = redundancy::RedundancyManager::new();
+        if let Err(e) = manager.initialize(&state).await {
+            eprintln!("Failed to initialize redundancy manager: {}", e);
+        }
+        if let Err(e) = manager.start_wireguard_interface().await {
+            eprintln!("Failed to start WireGuard interface: {}", e);
+        }
+        Some(manager)
+    } else {
+        println!("ℹ️  Redundancy not configured");
+        None
+    };
 
     let lcd_thread = lcd_display::start(event_bus.clone(), &state).await;
 
-    let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
-    let cell_changes = cell_observer.listen().await;
+    // Conditionally start cellular observer
+    let cell_changes = if state.read().await.config.cellular.is_some() {
+        let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
+        Some(cell_observer.listen().await)
+    } else {
+        println!("ℹ️  Cellular not configured");
+        None
+    };
 
-    let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
-    let wifi_changes = wifi_observer.listen();
+    // Conditionally start WiFi observer
+    let wifi_changes = if state.read().await.config.wifi.is_some() {
+        let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
+        Some(wifi_observer.listen())
+    } else {
+        println!("ℹ️  WiFi not configured");
+        None
+    };
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state).await;
     println!("Audio results are: {:?}", audio);
@@ -53,11 +69,15 @@ async fn main() {
     let _ = event_bus.send(AlasMessage::Exit);
 
     // Await all of our "threads" here to clean up...
-    println!("Waiting for Wi-Fi to unwrap...");
-    wifi_changes.await.expect("Oh well 1");
+    if let Some(wifi_changes) = wifi_changes {
+        println!("Waiting for Wi-Fi to unwrap...");
+        wifi_changes.await.expect("WiFi thread failed");
+    }
 
-    println!("Waiting for cellular to unwrap...");
-    let _ = cell_changes.await;
+    if let Some(cell_changes) = cell_changes {
+        println!("Waiting for cellular to unwrap...");
+        let _ = cell_changes.await;
+    }
 
     // LCD should always be last to exit so that we can display all messages
     println!("Waiting for web server to await...");
@@ -65,14 +85,20 @@ async fn main() {
     println!("Waiting for lcd to unwrap...");
     lcd_thread.await.expect("Oh well 4");
     println!("Waiting for audio to unwrap...");
-    let (config_thread, icecast, recording) = audio.await.expect("Oh well 6");
+    let audio_threads = audio.await.expect("Audio thread failed");
     println!("Waiting for config thread to unwrap...");
-    let result_one = config_thread.await.unwrap();
+    let result_one = audio_threads.config_thread.await.unwrap();
     println!("Results: {:?}", result_one);
-    println!("Waiting for Icecast to unwrap...");
-    let result_two = icecast.await.unwrap();
-    println!("Icecast unwrapped: {:?}", result_two);
-    println!("Waiting for recording to unwrap...");
-    let recording_result = recording.await.unwrap();
-    println!("Recording result: {:?}", recording_result);
+
+    if let Some(icecast) = audio_threads.icecast {
+        println!("Waiting for Icecast to unwrap...");
+        let result_two = icecast.await.unwrap();
+        println!("Icecast unwrapped: {:?}", result_two);
+    }
+
+    if let Some(recording) = audio_threads.recording {
+        println!("Waiting for recording to unwrap...");
+        let recording_result = recording.await.unwrap();
+        println!("Recording result: {:?}", recording_result);
+    }
 }
