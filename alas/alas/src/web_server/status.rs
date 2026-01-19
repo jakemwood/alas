@@ -64,7 +64,8 @@ async fn volume_meter(broadcast: &State<Sender<AlasMessage>>, mut end: Shutdown)
                             let now = Instant::now();
                             if now.duration_since(last_message_sent) >= Duration::from_millis(THROTTLE_MS) {
                                 last_message_sent = now;
-                                yield Event::data(left.to_string());
+                                let average = (left + right) / 2.0;
+                                yield Event::data(average.to_string());
                             }
                         },
                         AlasMessage::Exit => {
