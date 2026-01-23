@@ -43,16 +43,8 @@ pub async fn start(
         let config_reset = Arc::new(AtomicBool::new(false));
         let mut audio_last_seen = UNIX_EPOCH;
 
-        // Check which services are enabled
-        let enabled = alas_state.blocking_read().config.enabled_services();
-        let num_consumers = (enabled.recording as usize) + (enabled.streaming as usize);
-
-        let mut audio_bus = if num_consumers > 0 {
-            Some(Bus::<Vec<f32>>::new(2204 * 30))
-        } else {
-            println!("ℹ️  No audio consumers configured, audio processing disabled");
-            None
-        };
+        // Always create audio bus - threads always run but handle missing config gracefully
+        let mut audio_bus = Bus::<Vec<f32>>::new(2204 * 30);
 
         // Config watch
         let mut subscriber = bus.subscribe();
@@ -80,41 +72,23 @@ pub async fn start(
             println!("✅ Exited config thread");
         });
 
-        // Conditionally spawn Icecast streaming thread
-        let icecast = if enabled.streaming {
-            if let Some(ref mut audio_bus_ref) = audio_bus {
-                let icecast_rx = audio_bus_ref.add_rx();
-                Some(start_icecast_thread(
-                    icecast_rx,
-                    desire_to_broadcast.clone(),
-                    alas_state.clone(),
-                    bus.clone(),
-                    config_reset.clone()
-                ))
-            } else {
-                None
-            }
-        } else {
-            println!("ℹ️  Icecast not configured, streaming disabled");
-            None
-        };
+        // Always spawn Icecast streaming thread - it handles missing config gracefully
+        let icecast_rx = audio_bus.add_rx();
+        let icecast = start_icecast_thread(
+            icecast_rx,
+            desire_to_broadcast.clone(),
+            alas_state.clone(),
+            bus.clone(),
+            config_reset.clone()
+        );
 
-        // Conditionally spawn file saving thread
-        let record = if enabled.recording {
-            if let Some(ref mut audio_bus_ref) = audio_bus {
-                let file_rx = audio_bus_ref.add_rx();
-                Some(start_file_save_thread(
-                    file_rx,
-                    desire_to_broadcast.clone(),
-                    bus.clone()
-                ))
-            } else {
-                None
-            }
-        } else {
-            println!("ℹ️  Recording not configured, recording disabled");
-            None
-        };
+        // Always spawn file saving thread
+        let file_rx = audio_bus.add_rx();
+        let record = start_file_save_thread(
+            file_rx,
+            desire_to_broadcast.clone(),
+            bus.clone()
+        );
 
         let host = cpal::default_host();
 
@@ -152,7 +126,7 @@ pub async fn start(
                         &alas_state,
                         &mut desire_to_broadcast,
                         &mut audio_last_seen,
-                        audio_bus.as_mut()
+                        &mut audio_bus
                     )
                 },
                 err_fn,
@@ -190,8 +164,8 @@ pub async fn start(
 
         AudioThreads {
             config_thread,
-            icecast,
-            recording: record,
+            icecast: Some(icecast),
+            recording: Some(record),
         }
     })
 }
@@ -296,11 +270,19 @@ fn start_icecast_thread(
             };
 
             if desire_to_broadcast.load(Ordering::Relaxed) {
+                // Check if icecast config exists before attempting connection
+                let has_config = state.blocking_read().config.icecast.is_some();
+                if !has_config {
+                    // No config - just drain the audio bus and continue
+                    continue;
+                }
+
                 let icecast_connection = match connect_to_icecast(&state) {
                     Some(conn) => conn,
                     None => {
-                        println!("ℹ️  Cannot connect to Icecast, config not available");
-                        break;
+                        println!("ℹ️  Cannot connect to Icecast, will retry");
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                        continue;
                     }
                 };
                 config_reset.store(false, Ordering::Relaxed);
@@ -454,7 +436,7 @@ fn handle_samples<T>(
     state: &SafeState,
     desire_to_broadcast: &AtomicBool,
     audio_last_seen: &mut SystemTime,
-    sender: Option<&mut Bus<Vec<T>>>
+    sender: &mut Bus<Vec<T>>
 )
     where T: Sample
 {
@@ -495,10 +477,8 @@ fn handle_samples<T>(
         }
     }
 
-    // Only broadcast to audio bus if it exists (i.e., if we have consumers)
-    if let Some(sender) = sender {
-        sender.broadcast(input.to_vec().clone());
-    }
+    // Always broadcast to audio bus - threads always run
+    sender.broadcast(input.to_vec().clone());
 }
 
 fn calculate_rms_levels<T>(data: &[T], channels: usize) -> (f32, f32) where T: cpal::Sample {

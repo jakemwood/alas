@@ -12,7 +12,7 @@ use std::io::Write;
 use std::sync::Arc;
 use tokio;
 use tokio::signal;
-use tokio::sync::{ broadcast, RwLock };
+use tokio::sync::{ broadcast, Mutex, RwLock };
 
 #[tokio::main]
 async fn main() {
@@ -20,20 +20,27 @@ async fn main() {
     let state = Arc::new(RwLock::new(AlasState::new()));
     let (event_bus, _) = broadcast::channel::<AlasMessage>(256);
 
-    // Conditionally initialize redundancy manager and WireGuard interface
-    let _redundancy_manager = if state.read().await.config.redundancy.is_some() {
-        let manager = redundancy::RedundancyManager::new();
-        if let Err(e) = manager.initialize(&state).await {
-            eprintln!("Failed to initialize redundancy manager: {}", e);
-        }
-        if let Err(e) = manager.start_wireguard_interface().await {
+    // Always initialize redundancy manager (will create default config if needed)
+    let redundancy_manager = redundancy::RedundancyManager::new();
+    if let Err(e) = redundancy_manager.initialize(&state).await {
+        eprintln!("Failed to initialize redundancy manager: {}", e);
+    }
+
+    // Only start WireGuard interface if config is complete
+    let config_is_complete = state.read().await.config.redundancy
+        .as_ref()
+        .map(|c| !c.is_default())
+        .unwrap_or(false);
+
+    if config_is_complete {
+        if let Err(e) = redundancy_manager.start_wireguard_interface().await {
             eprintln!("Failed to start WireGuard interface: {}", e);
         }
-        Some(manager)
     } else {
-        println!("ℹ️  Redundancy not configured");
-        None
-    };
+        println!("ℹ️  Redundancy not configured, use web UI to set up");
+    }
+
+    let redundancy_manager = Arc::new(Mutex::new(redundancy_manager));
 
     let lcd_thread = lcd_display::start(event_bus.clone(), &state).await;
 
@@ -61,7 +68,7 @@ async fn main() {
     // Start webhook listener
     start_webhook_listener(event_bus.subscribe(), state.clone()).await;
 
-    let web_server = web_server::run_rocket_server(event_bus.clone(), &state).await;
+    let web_server = web_server::run_rocket_server(event_bus.clone(), &state, redundancy_manager.clone()).await;
 
     // Wait for exit here! All code below is for clean-up!
 
