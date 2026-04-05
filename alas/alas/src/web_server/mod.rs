@@ -22,19 +22,12 @@ async fn go() -> &'static str {
 
 pub async fn run_rocket_server(
     bus: Sender<AlasMessage>,
-    alas_state: &SafeState
+    alas_state: &SafeState,
+    redundancy_manager: Arc<Mutex<RedundancyManager>>
 ) -> JoinHandle<Rocket<Ignite>> {
     println!("Starting web server...");
     let tokio_state = alas_state.clone();
     tokio::spawn(async move {
-        // Initialize RedundancyManager
-        let redundancy_manager = RedundancyManager::new();
-        if let Err(e) = redundancy_manager.initialize(&tokio_state).await {
-            eprintln!("Failed to initialize redundancy manager: {}", e);
-            // log::error!("Failed to initialize redundancy manager: {}", e);
-        }
-        let redundancy_manager = Arc::new(Mutex::new(redundancy_manager));
-
         let allowed_origins = AllowedOrigins::some_exact(
             &["http://localhost:5173", "https://alas.krdf.org", "http://alasradio.local:8000"]
         );
