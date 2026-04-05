@@ -42,9 +42,8 @@ pub async fn run_rocket_server(
         }
         let redundancy_manager = Arc::new(Mutex::new(redundancy_manager));
 
-        let allowed_origins = AllowedOrigins::some_exact(
-            &["http://localhost:5173", "https://alas.krdf.org", "http://alasradio.local", "http://alas.krdf.org/"]
-        );
+        // Allow all origins - this is a local device with JWT authentication
+        let allowed_origins = AllowedOrigins::all();
 
         let cors = (rocket_cors::CorsOptions {
             allowed_origins,
