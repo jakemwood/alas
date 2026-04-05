@@ -7,7 +7,7 @@ use crate::network_manager::{
     StateChangedArgs,
     WiFiDeviceProxy,
 };
-use crate::state::AlasMessage;
+use crate::state::{AlasMessage, SafeState};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -245,13 +245,15 @@ pub enum AlasWiFiState {
 /// WiFiObserver allows us to subscribe to signals from D-bus about the state of Wi-Fi.
 pub struct WiFiObserver {
     pub state: RwLock<Option<AlasWiFiState>>,
+    pub global_state: SafeState,
     pub sender: Sender<AlasMessage>,
 }
 
 impl WiFiObserver {
-    pub fn new(sender: Sender<AlasMessage>) -> Self {
+    pub fn new(sender: Sender<AlasMessage>, global_state: &SafeState) -> Self {
         WiFiObserver {
             state: RwLock::new(None),
+            global_state: global_state.clone(),
             sender,
         }
     }
@@ -312,8 +314,16 @@ impl WiFiObserver {
                     }
                 }
             };
+
+            // Update local state
             let mut state = self.state.write().await;
             *state = Some(new_state.clone());
+
+            // Update global state - only Connected is truly "on"
+            // ConfigurationMode (hotspot) and Connecting/Disconnected are all "off"
+            let mut global_state = self.global_state.write().await;
+            global_state.wifi_on = new_state == AlasWiFiState::Connected;
+
             let _ = self.sender.send(AlasMessage::NetworkStatusChange {
                 new_state,
             });

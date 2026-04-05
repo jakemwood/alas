@@ -36,7 +36,7 @@ async fn main() {
     let cell_observer = Arc::new(CellObserver::new(event_bus.clone(), &state));
     let cell_changes = cell_observer.listen().await;
 
-    let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone()));
+    let wifi_observer = Arc::new(WiFiObserver::new(event_bus.clone(), &state));
     let wifi_changes = wifi_observer.listen();
 
     let audio = alas_lib::audio::start(event_bus.clone(), &state).await;

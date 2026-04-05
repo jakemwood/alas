@@ -9,7 +9,7 @@ target := if os() == "linux" { "" } else { "--target aarch64-unknown-linux-gnu -
 
 [working-directory: 'frontend']
 @deploy-frontend:
-    rsync -r dist/ ${PI_USERNAME}@${PI_HOSTNAME}:/home/${PI_USERNAME}/static
+    rsync -r dist/ ${PI_USERNAME}@${PI_HOSTNAME}:/var/lib/alas/static
 
 check:
     {{ cargo }} check {{ target }}

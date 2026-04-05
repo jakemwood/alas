@@ -27,7 +27,7 @@ pub struct AlasState {
 impl AlasState {
     pub fn new() -> AlasState {
         AlasState {
-            wifi_on: true,
+            wifi_on: false,
             cell_on: false,
             cell_strength: 0,
             is_streaming: false,

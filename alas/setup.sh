@@ -83,7 +83,7 @@ Group=alas
 WorkingDirectory=/var/lib/alas
 StandardOutput=journal
 StandardError=journal
-AmbientCapabilities=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 KillSignal=SIGINT
 StateDirectory=alas
 
