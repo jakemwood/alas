@@ -52,8 +52,8 @@ fi
 echo "Restarting polkit service to apply changes..."
 sudo systemctl restart polkit
 
-# Install Wireguard
-sudo apt install wireguard
+# Install Wireguard and libshout3 dependencies
+sudo apt install wireguard libshout3
 
 # Install engarde-client
 echo "Downloading EnGarde client..."
